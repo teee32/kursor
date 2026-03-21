@@ -78,15 +78,18 @@ export class InlineChatProvider {
             progress.report({ message: `${result.length} chars generated...` });
           }
 
-          // Clean up response - remove markdown code blocks if present
-          result = result.replace(/^```\w*\n?/, '').replace(/\n?```$/, '').trim();
+          // Remove markdown fences, then normalize insertion based on editor context.
+          const cleaned = this._stripMarkdownFences(result);
+          const nextText = selectedText
+            ? cleaned.trim()
+            : this._formatInsertion(cleaned, editor, editor.selection.active);
 
           // Apply edit
           await editor.edit((editBuilder) => {
             if (selectedText) {
-              editBuilder.replace(selection, result);
+              editBuilder.replace(selection, nextText);
             } else {
-              editBuilder.insert(editor.selection.active, result);
+              editBuilder.insert(editor.selection.active, nextText);
             }
           });
 
@@ -101,5 +104,35 @@ export class InlineChatProvider {
         }
       }
     );
+  }
+
+  private _stripMarkdownFences(text: string): string {
+    return text
+      .replace(/^```[\w-]*\r?\n?/, '')
+      .replace(/\r?\n?```$/, '')
+      .replace(/\r\n/g, '\n');
+  }
+
+  private _formatInsertion(
+    text: string,
+    editor: vscode.TextEditor,
+    position: vscode.Position
+  ): string {
+    const normalized = text.trim();
+    if (!normalized) { return ''; }
+
+    const line = editor.document.lineAt(position.line).text;
+    const before = line.slice(0, position.character);
+    const after = line.slice(position.character);
+
+    let insertText = normalized;
+    if (before.trim().length > 0 && !insertText.startsWith('\n')) {
+      insertText = `\n${insertText}`;
+    }
+    if (after.trim().length > 0 && !insertText.endsWith('\n')) {
+      insertText = `${insertText}\n`;
+    }
+
+    return insertText;
   }
 }

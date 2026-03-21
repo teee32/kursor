@@ -101,11 +101,12 @@
     }
   },
   "scripts": {
+    "verify-node": "node ./scripts/check-node.js",
     "vscode:prepublish": "npm run compile",
     "copy-html": "cp src/chat/chat.html out/chat/chat.html",
     "compile": "tsc -p ./ && npm run copy-html",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package"
+    "package": "npm run verify-node && vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
