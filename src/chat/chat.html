@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kursor Chat</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #cccccc;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header - 模仿 Cursor 的顶部栏 */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid #333;
+      background: #252526;
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-title .logo {
+      font-size: 16px;
+    }
+    .header-badge {
+      font-size: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .header-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .header-btn:hover {
+      background: #333;
+      color: #e0e0e0;
+    }
+
+    /* Model selector - 模仿 Cursor 的模型选择器 */
+    .model-selector {
+      padding: 8px 16px;
+      border-bottom: 1px solid #333;
+      background: #252526;
+      flex-shrink: 0;
+    }
+    .model-selector select {
+      width: 100%;
+      background: #1e1e1e;
+      color: #cccccc;
+      border: 1px solid #444;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+    }
+    .model-selector select:focus {
+      border-color: #667eea;
+    }
+
+    /* Chat messages area */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .chat-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-container::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 3px;
+    }
+
+    /* Welcome screen */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      padding: 20px;
+      gap: 12px;
+    }
+    .welcome-logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    .welcome-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e0e0e0;
+    }
+    .welcome-subtitle {
+      font-size: 13px;
+      color: #888;
+      max-width: 300px;
+      line-height: 1.5;
+    }
+    .welcome-tips {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .tip-card {
+      background: #252526;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      color: #aaa;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tip-card:hover {
+      border-color: #667eea;
+      background: #2a2a2b;
+      color: #ccc;
+    }
+    .tip-card .tip-icon {
+      margin-right: 6px;
+    }
+
+    /* Message bubbles */
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .message-header.user { color: #4fc1ff; }
+    .message-header.assistant { color: #c792ea; }
+    .message-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .message-avatar.user { background: #264f78; }
+    .message-avatar.assistant { background: #4a2d6e; }
+    .message-content {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-wrap: break-word;
+    }
+    .message-content.user {
+      background: #264f78;
+      color: #e0e0e0;
+      margin-left: 30px;
+    }
+    .message-content.assistant {
+      background: #2d2d30;
+      color: #cccccc;
+      margin-left: 30px;
+    }
+    .message-content pre {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 12px;
+      margin: 8px 0;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .message-content code {
+      background: #1a1a1a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .message-content pre code {
+      background: none;
+      padding: 0;
+    }
+
+    /* Thinking indicator */
+    .thinking {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      margin-left: 30px;
+      font-size: 12px;
+      color: #888;
+    }
+    .thinking-dots span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #667eea;
+      animation: bounce 1.4s infinite both;
+      margin: 0 2px;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.16s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.32s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    /* Input area - 模仿 Cursor 的输入框 */
+    .input-area {
+      padding: 12px 16px;
+      border-top: 1px solid #333;
+      background: #252526;
+      flex-shrink: 0;
+    }
+    .input-wrapper {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      background: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 10px;
+      padding: 8px 12px;
+      transition: border-color 0.15s;
+    }
+    .input-wrapper:focus-within {
+      border-color: #667eea;
+    }
+    .input-wrapper textarea {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #e0e0e0;
+      font-size: 13px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      min-height: 20px;
+      line-height: 1.4;
+    }
+    .input-wrapper textarea::placeholder {
+      color: #666;
+    }
+    .send-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .input-hint {
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+      margin-top: 6px;
+    }
+    .input-hint a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    /* Context badge */
+    .context-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #333;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">
+      <span class="logo">⌨️</span>
+      <span>Kursor Chat</span>
+      <span class="header-badge" id="badge">Pro Max Ultra™</span>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="clearBtn" title="Clear chat">🗑️</button>
+    </div>
+  </div>
+
+  <!-- Chat messages -->
+  <div class="chat-container" id="chatContainer">
+    <!-- Welcome screen -->
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-logo">⌨️</div>
+      <div class="welcome-title">Welcome to Kursor</div>
+      <div class="welcome-subtitle" id="welcomeSubtitle">
+        The AI Code Editor that Cursor wishes it was. Powered by Kimi.
+      </div>
+      <div class="welcome-tips">
+        <div class="tip-card" onclick="askTip('Explain the code in my current file')">
+          <span class="tip-icon">📖</span> Explain my current code
+        </div>
+        <div class="tip-card" onclick="askTip('Find bugs in the selected code')">
+          <span class="tip-icon">🐛</span> Find bugs in my code
+        </div>
+        <div class="tip-card" onclick="askTip('Refactor the selected code to be cleaner')">
+          <span class="tip-icon">✨</span> Refactor my code
+        </div>
+        <div class="tip-card" onclick="askTip('Write unit tests for the selected code')">
+          <span class="tip-icon">🧪</span> Write tests for my code
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div class="input-area">
+    <div class="input-wrapper">
+      <textarea
+        id="userInput"
+        rows="1"
+        placeholder="Ask Kursor anything... for free"
+        autofocus
+      ></textarea>
+      <button class="send-btn" id="sendBtn" title="Send message">↑</button>
+    </div>
+    <div class="input-hint">
+      Kursor — Free forever. No subscription. No BS.
+    </div>
+  </div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    const chatContainer = document.getElementById('chatContainer');
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let isStreaming = false;
+    let currentAssistantEl = null;
+
+    // Auto-resize textarea
+    userInput.addEventListener('input', () => {
+      userInput.style.height = 'auto';
+      userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+    });
+
+    // Send on Enter (Shift+Enter for newline)
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+    clearBtn.addEventListener('click', () => {
+      vscode.postMessage({ type: 'clear' });
+      chatContainer.innerHTML = '';
+      chatContainer.appendChild(welcomeScreen);
+      welcomeScreen.style.display = 'flex';
+      currentAssistantEl = null;
+    });
+
+    function askTip(text) {
+      userInput.value = text;
+      sendMessage();
+    }
+
+    function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text || isStreaming) return;
+
+      // Hide welcome screen
+      welcomeScreen.style.display = 'none';
+
+      // Add user message
+      addMessage('user', text);
+
+      // Clear input
+      userInput.value = '';
+      userInput.style.height = 'auto';
+
+      // Show thinking indicator
+      showThinking();
+
+      // Send to extension
+      vscode.postMessage({ type: 'chat', content: text });
+      isStreaming = true;
+      sendBtn.disabled = true;
+    }
+
+    function addMessage(role, content) {
+      const msgEl = document.createElement('div');
+      msgEl.className = 'message';
+
+      const isUser = role === 'user';
+      const avatar = isUser ? '👤' : '⌨️';
+      const name = isUser ? 'You' : 'Kursor';
+
+      msgEl.innerHTML = `
+        <div class="message-header ${role}">
+          <div class="message-avatar ${role}">${avatar}</div>
+          ${name}
+        </div>
+        <div class="message-content ${role}">${escapeHtml(content)}</div>
+      `;
+
+      chatContainer.appendChild(msgEl);
+      scrollToBottom();
+      return msgEl;
+    }
+
+    function showThinking() {
+      const el = document.createElement('div');
+      el.className = 'message';
+      el.id = 'thinkingIndicator';
+      el.innerHTML = `
+        <div class="message-header assistant">
+          <div class="message-avatar assistant">⌨️</div>
+          Kursor
+        </div>
+        <div class="thinking">
+          <div class="thinking-dots"><span></span><span></span><span></span></div>
+          <span id="thinkingText">Kimi is thinking... for free...</span>
+        </div>
+      `;
+      chatContainer.appendChild(el);
+      scrollToBottom();
+    }
+
+    function removeThinking() {
+      const el = document.getElementById('thinkingIndicator');
+      if (el) el.remove();
+    }
+
+    function startStreamResponse() {
+      removeThinking();
+      const msgEl = document.createElement('div');
+      msgEl.className = 'message';
+      msgEl.innerHTML = `
+        <div class="message-header assistant">
+          <div class="message-avatar assistant">⌨️</div>
+          Kursor
+        </div>
+        <div class="message-content assistant" id="streamContent"></div>
+      `;
+      chatContainer.appendChild(msgEl);
+      currentAssistantEl = document.getElementById('streamContent');
+    }
+
+    function appendStreamChunk(text) {
+      if (!currentAssistantEl) {
+        startStreamResponse();
+      }
+      currentAssistantEl.innerHTML = renderMarkdown(
+        currentAssistantEl.getAttribute('data-raw') ?
+          currentAssistantEl.getAttribute('data-raw') + text : text
+      );
+      currentAssistantEl.setAttribute(
+        'data-raw',
+        (currentAssistantEl.getAttribute('data-raw') || '') + text
+      );
+      scrollToBottom();
+    }
+
+    function endStream() {
+      isStreaming = false;
+      sendBtn.disabled = false;
+      currentAssistantEl = null;
+      removeThinking();
+      userInput.focus();
+    }
+
+    // Handle messages from extension
+    window.addEventListener('message', (event) => {
+      const msg = event.data;
+      switch (msg.type) {
+        case 'streamStart':
+          removeThinking();
+          break;
+        case 'streamChunk':
+          appendStreamChunk(msg.content);
+          break;
+        case 'streamEnd':
+          endStream();
+          break;
+        case 'error':
+          removeThinking();
+          addMessage('assistant', '❌ ' + msg.content);
+          endStream();
+          break;
+        case 'welcome':
+          document.getElementById('welcomeSubtitle').textContent = msg.content;
+          break;
+        case 'placeholder':
+          userInput.placeholder = msg.content;
+          break;
+      }
+    });
+
+    function scrollToBottom() {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Simple markdown renderer
+    function renderMarkdown(text) {
+      if (!text) return '';
+      let html = escapeHtml(text);
+
+      // Code blocks
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+        return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+      });
+
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+      // Bold
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+      // Italic
+      html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+      // Line breaks
+      html = html.replace(/\n/g, '<br>');
+
+      return html;
+    }
+  </script>
+</body>
+</html>

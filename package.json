@@ -1,0 +1,116 @@
+{
+  "name": "kursor",
+  "displayName": "Kursor",
+  "description": "The AI Code Editor that Cursor wishes it was. Powered by Kimi — because we have taste.",
+  "version": "0.0.1",
+  "publisher": "kursor-team",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ai",
+    "kimi",
+    "cursor",
+    "kursor",
+    "code assistant",
+    "moonshot"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kursor-sidebar",
+          "title": "Kursor",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "kursor-sidebar": [
+        {
+          "type": "webview",
+          "id": "kursor.chatView",
+          "name": "Kursor Chat"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "kursor.inlineChat",
+        "title": "Kursor: Inline Chat (Better than Cmd+K)"
+      },
+      {
+        "command": "kursor.setApiKey",
+        "title": "Kursor: Set Kimi API Key"
+      },
+      {
+        "command": "kursor.clearChat",
+        "title": "Kursor: Clear Chat"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "kursor.inlineChat",
+        "key": "ctrl+shift+k",
+        "mac": "cmd+shift+k",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Kursor",
+      "properties": {
+        "kursor.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Kimi (Moonshot AI) API Key. Get one at https://platform.moonshot.ai/",
+          "markdownDescription": "Your **Kimi** API Key. Unlike Cursor, we don't charge you $20/month. [Get your free key here](https://platform.moonshot.ai/)"
+        },
+        "kursor.model": {
+          "type": "string",
+          "default": "moonshot-v1-32k",
+          "enum": [
+            "moonshot-v1-8k",
+            "moonshot-v1-32k",
+            "moonshot-v1-128k",
+            "kimi-k2.5"
+          ],
+          "description": "Choose your Kimi model. More context = more power = more flex on Cursor users."
+        },
+        "kursor.apiBase": {
+          "type": "string",
+          "default": "https://api.moonshot.ai/v1",
+          "description": "Kimi API base URL. Change this if you're using a proxy."
+        },
+        "kursor.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Temperature for responses (0-1). Unlike some editors, we respect API limits."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "copy-html": "cp src/chat/chat.html out/chat/chat.html",
+    "compile": "tsc -p ./ && npm run copy-html",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}
