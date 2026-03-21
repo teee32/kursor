@@ -5,399 +5,414 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kursor Chat</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #1e1e1e;
-      color: #cccccc;
+      background: #181818;
+      color: #ccc;
       height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
-    /* Header - 模仿 Cursor 的顶部栏 */
-    .header {
+    /* ===== Top nav bar — matches Cursor exactly ===== */
+    .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
-      border-bottom: 1px solid #333;
-      background: #252526;
+      padding: 6px 12px;
+      flex-shrink: 0;
+      background: #181818;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .topbar-icon {
+      color: #666;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+    }
+    .topbar-tab {
+      font-size: 13px;
+      font-weight: 500;
+      color: #ddd;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 3px 12px;
+      cursor: default;
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .topbar-btn {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .topbar-btn:hover { color: #aaa; background: #2a2a2a; }
+
+    /* ===== Input area at TOP — the key Cursor difference ===== */
+    .composer-area {
+      padding: 8px 12px 0 12px;
       flex-shrink: 0;
     }
-    .header-title {
+    .composer-box {
+      background: #181818;
+      border: 1px solid #3a3a3a;
+      border-radius: 12px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s;
+    }
+    .composer-box:focus-within {
+      border-color: #555;
+    }
+    .composer-textarea {
+      width: 100%;
+      background: none;
+      border: none;
+      color: #ddd;
       font-size: 13px;
-      font-weight: 600;
-      color: #e0e0e0;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      padding: 14px 16px 8px 16px;
+      min-height: 70px;
+      max-height: 180px;
+      line-height: 1.5;
+    }
+    .composer-textarea::placeholder {
+      color: #555;
+    }
+
+    /* Toolbar row inside composer box */
+    .composer-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 10px 10px 10px;
+    }
+    .composer-toolbar-left {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .header-title .logo {
-      font-size: 16px;
-    }
-    .header-badge {
-      font-size: 10px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: 500;
-    }
-    .header-actions {
+    .composer-toolbar-right {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 6px;
     }
-    .header-btn {
+    .mode-selector {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: #bbb;
+      cursor: pointer;
+      user-select: none;
+    }
+    .mode-selector:hover { border-color: #555; }
+    .mode-selector .mode-icon {
+      font-size: 13px;
+      color: #888;
+    }
+    .mode-selector .mode-arrow {
+      font-size: 9px;
+      color: #666;
+      margin-left: 2px;
+    }
+    .model-label {
+      font-size: 12px;
+      color: #666;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      user-select: none;
+    }
+    .model-label:hover { color: #999; }
+    .model-label .model-arrow {
+      font-size: 9px;
+    }
+    .toolbar-icon-btn {
       background: none;
       border: none;
-      color: #888;
+      color: #555;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 16px;
       padding: 4px;
       border-radius: 4px;
+      display: flex;
+      align-items: center;
     }
-    .header-btn:hover {
-      background: #333;
-      color: #e0e0e0;
-    }
+    .toolbar-icon-btn:hover { color: #999; }
 
-    /* Model selector - 模仿 Cursor 的模型选择器 */
-    .model-selector {
-      padding: 8px 16px;
-      border-bottom: 1px solid #333;
-      background: #252526;
+    /* Context row below composer */
+    .context-row {
+      padding: 6px 14px 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
       flex-shrink: 0;
     }
-    .model-selector select {
-      width: 100%;
-      background: #1e1e1e;
-      color: #cccccc;
-      border: 1px solid #444;
-      padding: 6px 10px;
-      border-radius: 6px;
+    .context-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
       font-size: 12px;
+      color: #666;
       cursor: pointer;
-      outline: none;
+      user-select: none;
     }
-    .model-selector select:focus {
-      border-color: #667eea;
+    .context-label:hover { color: #999; }
+    .context-label .ctx-icon {
+      font-size: 13px;
+    }
+    .context-label .ctx-arrow {
+      font-size: 9px;
     }
 
-    /* Chat messages area */
+    /* ===== Chat messages area ===== */
     .chat-container {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 8px 14px 16px 14px;
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
-    .chat-container::-webkit-scrollbar {
-      width: 6px;
-    }
+    .chat-container::-webkit-scrollbar { width: 6px; }
     .chat-container::-webkit-scrollbar-thumb {
-      background: #444;
+      background: #333;
       border-radius: 3px;
     }
 
-    /* Welcome screen */
-    .welcome {
+    /* Empty state */
+    .empty-state {
+      flex: 1;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      flex: 1;
-      text-align: center;
-      padding: 20px;
-      gap: 12px;
-    }
-    .welcome-logo {
-      font-size: 48px;
-      margin-bottom: 8px;
-    }
-    .welcome-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #e0e0e0;
-    }
-    .welcome-subtitle {
-      font-size: 13px;
-      color: #888;
-      max-width: 300px;
-      line-height: 1.5;
-    }
-    .welcome-tips {
-      margin-top: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 100%;
-      max-width: 320px;
-    }
-    .tip-card {
-      background: #252526;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 12px;
-      text-align: left;
-      font-size: 12px;
-      color: #aaa;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .tip-card:hover {
-      border-color: #667eea;
-      background: #2a2a2b;
-      color: #ccc;
-    }
-    .tip-card .tip-icon {
-      margin-right: 6px;
     }
 
-    /* Message bubbles */
+    /* Messages */
     .message {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       animation: fadeIn 0.2s ease;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .message-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .msg-role {
       font-size: 12px;
       font-weight: 600;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .message-header.user { color: #4fc1ff; }
-    .message-header.assistant { color: #c792ea; }
-    .message-avatar {
-      width: 22px;
-      height: 22px;
+    .msg-role-icon {
+      width: 18px;
+      height: 18px;
       border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 10px;
+      background: #2a2a2a;
     }
-    .message-avatar.user { background: #264f78; }
-    .message-avatar.assistant { background: #4a2d6e; }
-    .message-content {
-      padding: 10px 14px;
-      border-radius: 8px;
+    .msg-body {
       font-size: 13px;
-      line-height: 1.6;
+      line-height: 1.65;
+      color: #ccc;
+      padding-left: 24px;
       overflow-wrap: break-word;
     }
-    .message-content.user {
-      background: #264f78;
-      color: #e0e0e0;
-      margin-left: 30px;
+    .msg-body.user-msg {
+      color: #ddd;
     }
-    .message-content.assistant {
-      background: #2d2d30;
-      color: #cccccc;
-      margin-left: 30px;
-    }
-    .message-content pre {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 12px;
+    .msg-body pre {
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 12px 14px;
       margin: 8px 0;
       overflow-x: auto;
       font-size: 12px;
-      line-height: 1.4;
+      line-height: 1.5;
     }
-    .message-content code {
-      background: #1a1a1a;
-      padding: 2px 6px;
+    .msg-body code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+      background: #222;
+      padding: 1px 5px;
       border-radius: 3px;
       font-size: 12px;
-      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
     }
-    .message-content pre code {
+    .msg-body pre code {
       background: none;
       padding: 0;
     }
 
-    /* Thinking indicator */
+    /* Thinking dots */
     .thinking {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 14px;
-      margin-left: 30px;
+      padding-left: 24px;
       font-size: 12px;
-      color: #888;
+      color: #666;
     }
     .thinking-dots span {
       display: inline-block;
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
-      background: #667eea;
-      animation: bounce 1.4s infinite both;
-      margin: 0 2px;
+      background: #555;
+      animation: pulse 1.4s infinite both;
     }
     .thinking-dots span:nth-child(2) { animation-delay: 0.16s; }
     .thinking-dots span:nth-child(3) { animation-delay: 0.32s; }
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.3; }
+      40% { opacity: 1; }
     }
 
-    /* Input area - 模仿 Cursor 的输入框 */
-    .input-area {
-      padding: 12px 16px;
-      border-top: 1px solid #333;
-      background: #252526;
-      flex-shrink: 0;
-    }
-    .input-wrapper {
-      display: flex;
-      gap: 8px;
-      align-items: flex-end;
-      background: #1e1e1e;
-      border: 1px solid #444;
-      border-radius: 10px;
-      padding: 8px 12px;
-      transition: border-color 0.15s;
-    }
-    .input-wrapper:focus-within {
-      border-color: #667eea;
-    }
-    .input-wrapper textarea {
-      flex: 1;
-      background: none;
-      border: none;
-      color: #e0e0e0;
-      font-size: 13px;
-      font-family: inherit;
-      resize: none;
-      outline: none;
-      max-height: 120px;
-      min-height: 20px;
-      line-height: 1.4;
-    }
-    .input-wrapper textarea::placeholder {
-      color: #666;
-    }
-    .send-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      color: white;
-      width: 30px;
-      height: 30px;
+    /* Model dropdown (hidden by default) */
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      background: #252525;
+      border: 1px solid #3a3a3a;
       border-radius: 8px;
+      padding: 4px;
+      z-index: 100;
+      min-width: 180px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-item {
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #ccc;
+      border-radius: 4px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      flex-shrink: 0;
-      transition: opacity 0.15s;
+      justify-content: space-between;
     }
-    .send-btn:hover { opacity: 0.85; }
-    .send-btn:disabled { opacity: 0.4; cursor: default; }
-
-    .input-hint {
-      font-size: 11px;
-      color: #555;
-      text-align: center;
-      margin-top: 6px;
-    }
-    .input-hint a {
-      color: #667eea;
-      text-decoration: none;
-    }
-
-    /* Context badge */
-    .context-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: #333;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      color: #aaa;
-      margin-bottom: 8px;
-    }
+    .dropdown-item:hover { background: #333; }
+    .dropdown-item.active { color: #fff; }
+    .dropdown-item .check { color: #888; font-size: 11px; }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <div class="header">
-    <div class="header-title">
-      <span class="logo">⌨️</span>
-      <span>Kursor Chat</span>
-      <span class="header-badge" id="badge">Pro Max Ultra™</span>
+  <!-- Top navigation bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-icon">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      </span>
+      <span class="topbar-tab">New Chat</span>
     </div>
-    <div class="header-actions">
-      <button class="header-btn" id="clearBtn" title="Clear chat">🗑️</button>
-    </div>
-  </div>
-
-  <!-- Chat messages -->
-  <div class="chat-container" id="chatContainer">
-    <!-- Welcome screen -->
-    <div class="welcome" id="welcomeScreen">
-      <div class="welcome-logo">⌨️</div>
-      <div class="welcome-title">Welcome to Kursor</div>
-      <div class="welcome-subtitle" id="welcomeSubtitle">
-        The AI Code Editor that Cursor wishes it was. Powered by Kimi.
-      </div>
-      <div class="welcome-tips">
-        <div class="tip-card" onclick="askTip('Explain the code in my current file')">
-          <span class="tip-icon">📖</span> Explain my current code
-        </div>
-        <div class="tip-card" onclick="askTip('Find bugs in the selected code')">
-          <span class="tip-icon">🐛</span> Find bugs in my code
-        </div>
-        <div class="tip-card" onclick="askTip('Refactor the selected code to be cleaner')">
-          <span class="tip-icon">✨</span> Refactor my code
-        </div>
-        <div class="tip-card" onclick="askTip('Write unit tests for the selected code')">
-          <span class="tip-icon">🧪</span> Write tests for my code
-        </div>
-      </div>
+    <div class="topbar-right">
+      <button class="topbar-btn" id="newChatBtn" title="New chat">+</button>
+      <button class="topbar-btn" id="historyBtn" title="Chat history">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+      </button>
+      <button class="topbar-btn" id="moreBtn" title="More options">...</button>
     </div>
   </div>
 
-  <!-- Input area -->
-  <div class="input-area">
-    <div class="input-wrapper">
+  <!-- Composer input area (at the top, like Cursor) -->
+  <div class="composer-area">
+    <div class="composer-box" id="composerBox">
       <textarea
+        class="composer-textarea"
         id="userInput"
-        rows="1"
-        placeholder="Ask Kursor anything... for free"
+        rows="3"
+        placeholder="Plan, @ for context, / for commands"
         autofocus
       ></textarea>
-      <button class="send-btn" id="sendBtn" title="Send message">↑</button>
+      <div class="composer-toolbar">
+        <div class="composer-toolbar-left">
+          <div class="mode-selector" id="modeSelector">
+            <span class="mode-icon">&#8734;</span>
+            <span>Agent</span>
+            <span class="mode-arrow">&#9662;</span>
+          </div>
+          <div class="model-label" id="modelSelector">
+            <span id="modelName">Kimi K2.5 Fast</span>
+            <span class="model-arrow">&#9662;</span>
+          </div>
+        </div>
+        <div class="composer-toolbar-right">
+          <button class="toolbar-icon-btn" title="Attach image">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="3" width="12" height="10" rx="1.5"/><circle cx="5.5" cy="6.5" r="1"/><path d="M2 11l3-3 2 2 3-3 4 4"/></svg>
+          </button>
+          <button class="toolbar-icon-btn" title="Voice input">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="6" y="2" width="4" height="7" rx="2"/><path d="M4 8a4 4 0 008 0"/><path d="M8 12v2"/></svg>
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="input-hint">
-      Kursor — Free forever. No subscription. No BS.
+  </div>
+
+  <!-- Context row -->
+  <div class="context-row">
+    <div class="context-label">
+      <span class="ctx-icon">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M5 3V2h6v1"/></svg>
+      </span>
+      <span>Local</span>
+      <span class="ctx-arrow">&#9662;</span>
     </div>
+  </div>
+
+  <!-- Chat messages (below input, like Cursor) -->
+  <div class="chat-container" id="chatContainer">
+    <div class="empty-state" id="emptyState"></div>
+  </div>
+
+  <!-- Model dropdown -->
+  <div class="dropdown-menu" id="modelDropdown">
+    <div class="dropdown-item active" data-model="kimi-k2.5">Kimi K2.5 Fast <span class="check">&#10003;</span></div>
+    <div class="dropdown-item" data-model="moonshot-v1-128k">Moonshot 128K</div>
+    <div class="dropdown-item" data-model="moonshot-v1-32k">Moonshot 32K</div>
+    <div class="dropdown-item" data-model="moonshot-v1-8k">Moonshot 8K</div>
   </div>
 
   <script>
     const vscode = acquireVsCodeApi();
     const chatContainer = document.getElementById('chatContainer');
-    const welcomeScreen = document.getElementById('welcomeScreen');
+    const emptyState = document.getElementById('emptyState');
     const userInput = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const modelSelector = document.getElementById('modelSelector');
+    const modelDropdown = document.getElementById('modelDropdown');
+    const modelName = document.getElementById('modelName');
 
     let isStreaming = false;
     let currentAssistantEl = null;
@@ -405,7 +420,7 @@
     // Auto-resize textarea
     userInput.addEventListener('input', () => {
       userInput.style.height = 'auto';
-      userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+      userInput.style.height = Math.min(userInput.scrollHeight, 180) + 'px';
     });
 
     // Send on Enter (Shift+Enter for newline)
@@ -416,58 +431,75 @@
       }
     });
 
-    sendBtn.addEventListener('click', sendMessage);
-    clearBtn.addEventListener('click', () => {
+    // New chat
+    newChatBtn.addEventListener('click', () => {
       vscode.postMessage({ type: 'clear' });
-      chatContainer.innerHTML = '';
-      chatContainer.appendChild(welcomeScreen);
-      welcomeScreen.style.display = 'flex';
+      chatContainer.innerHTML = '<div class="empty-state" id="emptyState"></div>';
       currentAssistantEl = null;
+      userInput.focus();
     });
 
-    function askTip(text) {
-      userInput.value = text;
-      sendMessage();
-    }
+    // Model dropdown toggle
+    modelSelector.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = modelSelector.getBoundingClientRect();
+      modelDropdown.style.top = (rect.bottom + 4) + 'px';
+      modelDropdown.style.left = rect.left + 'px';
+      modelDropdown.classList.toggle('show');
+    });
+
+    document.addEventListener('click', () => {
+      modelDropdown.classList.remove('show');
+    });
+
+    modelDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const model = item.dataset.model;
+        modelDropdown.querySelectorAll('.dropdown-item').forEach(i => {
+          i.classList.remove('active');
+          i.querySelector('.check')?.remove();
+        });
+        item.classList.add('active');
+        item.innerHTML += ' <span class="check">&#10003;</span>';
+        modelName.textContent = item.textContent.replace('✓', '').trim();
+        modelDropdown.classList.remove('show');
+        vscode.postMessage({ type: 'setModel', model });
+      });
+    });
 
     function sendMessage() {
       const text = userInput.value.trim();
       if (!text || isStreaming) return;
 
-      // Hide welcome screen
-      welcomeScreen.style.display = 'none';
-
-      // Add user message
       addMessage('user', text);
 
-      // Clear input
       userInput.value = '';
       userInput.style.height = 'auto';
 
-      // Show thinking indicator
       showThinking();
 
-      // Send to extension
       vscode.postMessage({ type: 'chat', content: text });
       isStreaming = true;
-      sendBtn.disabled = true;
     }
 
     function addMessage(role, content) {
+      // Remove empty state if present
+      const es = document.getElementById('emptyState');
+      if (es) es.remove();
+
       const msgEl = document.createElement('div');
       msgEl.className = 'message';
 
       const isUser = role === 'user';
-      const avatar = isUser ? '👤' : '⌨️';
+      const icon = isUser ? '&#9679;' : 'K';
       const name = isUser ? 'You' : 'Kursor';
 
-      msgEl.innerHTML = `
-        <div class="message-header ${role}">
-          <div class="message-avatar ${role}">${avatar}</div>
-          ${name}
-        </div>
-        <div class="message-content ${role}">${escapeHtml(content)}</div>
-      `;
+      msgEl.innerHTML =
+        '<div class="msg-role">' +
+          '<div class="msg-role-icon">' + icon + '</div>' +
+          name +
+        '</div>' +
+        '<div class="msg-body' + (isUser ? ' user-msg' : '') + '">' + (isUser ? escapeHtml(content) : content) + '</div>';
 
       chatContainer.appendChild(msgEl);
       scrollToBottom();
@@ -478,16 +510,12 @@
       const el = document.createElement('div');
       el.className = 'message';
       el.id = 'thinkingIndicator';
-      el.innerHTML = `
-        <div class="message-header assistant">
-          <div class="message-avatar assistant">⌨️</div>
-          Kursor
-        </div>
-        <div class="thinking">
-          <div class="thinking-dots"><span></span><span></span><span></span></div>
-          <span id="thinkingText">Kimi is thinking... for free...</span>
-        </div>
-      `;
+      el.innerHTML =
+        '<div class="msg-role"><div class="msg-role-icon">K</div>Kursor</div>' +
+        '<div class="thinking">' +
+          '<div class="thinking-dots"><span></span><span></span><span></span></div>' +
+          '<span>Kimi is thinking... for free...</span>' +
+        '</div>';
       chatContainer.appendChild(el);
       scrollToBottom();
     }
@@ -501,41 +529,29 @@
       removeThinking();
       const msgEl = document.createElement('div');
       msgEl.className = 'message';
-      msgEl.innerHTML = `
-        <div class="message-header assistant">
-          <div class="message-avatar assistant">⌨️</div>
-          Kursor
-        </div>
-        <div class="message-content assistant" id="streamContent"></div>
-      `;
+      const id = 'stream_' + Date.now();
+      msgEl.innerHTML =
+        '<div class="msg-role"><div class="msg-role-icon">K</div>Kursor</div>' +
+        '<div class="msg-body" id="' + id + '"></div>';
       chatContainer.appendChild(msgEl);
-      currentAssistantEl = document.getElementById('streamContent');
+      currentAssistantEl = document.getElementById(id);
     }
 
     function appendStreamChunk(text) {
-      if (!currentAssistantEl) {
-        startStreamResponse();
-      }
-      currentAssistantEl.innerHTML = renderMarkdown(
-        currentAssistantEl.getAttribute('data-raw') ?
-          currentAssistantEl.getAttribute('data-raw') + text : text
-      );
-      currentAssistantEl.setAttribute(
-        'data-raw',
-        (currentAssistantEl.getAttribute('data-raw') || '') + text
-      );
+      if (!currentAssistantEl) startStreamResponse();
+      const raw = (currentAssistantEl.getAttribute('data-raw') || '') + text;
+      currentAssistantEl.setAttribute('data-raw', raw);
+      currentAssistantEl.innerHTML = renderMarkdown(raw);
       scrollToBottom();
     }
 
     function endStream() {
       isStreaming = false;
-      sendBtn.disabled = false;
       currentAssistantEl = null;
       removeThinking();
       userInput.focus();
     }
 
-    // Handle messages from extension
     window.addEventListener('message', (event) => {
       const msg = event.data;
       switch (msg.type) {
@@ -550,14 +566,8 @@
           break;
         case 'error':
           removeThinking();
-          addMessage('assistant', '❌ ' + msg.content);
+          addMessage('assistant', '&#10060; ' + escapeHtml(msg.content));
           endStream();
-          break;
-        case 'welcome':
-          document.getElementById('welcomeSubtitle').textContent = msg.content;
-          break;
-        case 'placeholder':
-          userInput.placeholder = msg.content;
           break;
       }
     });
@@ -572,28 +582,15 @@
       return div.innerHTML;
     }
 
-    // Simple markdown renderer
     function renderMarkdown(text) {
       if (!text) return '';
       let html = escapeHtml(text);
-
-      // Code blocks
-      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-        return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
-      });
-
-      // Inline code
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
+        '<pre><code class="language-' + lang + '">' + code.trim() + '</code></pre>');
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-      // Bold
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-      // Italic
       html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-      // Line breaks
       html = html.replace(/\n/g, '<br>');
-
       return html;
     }
   </script>

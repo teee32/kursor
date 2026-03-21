@@ -4,8 +4,6 @@ import * as path from 'path';
 import { KimiClient } from '../api/kimi';
 import { ChatMessage } from '../api/types';
 import {
-  WELCOME_MESSAGES,
-  PLACEHOLDER_MESSAGES,
   ERROR_MESSAGES,
   SYSTEM_PROMPT,
   randomFrom,
@@ -35,19 +33,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this._extensionUri],
     };
 
-    webviewView.webview.html = this._getHtml(webviewView.webview);
-
-    // Send welcome message and placeholder
-    setTimeout(() => {
-      webviewView.webview.postMessage({
-        type: 'welcome',
-        content: randomFrom(WELCOME_MESSAGES),
-      });
-      webviewView.webview.postMessage({
-        type: 'placeholder',
-        content: randomFrom(PLACEHOLDER_MESSAGES),
-      });
-    }, 100);
+    webviewView.webview.html = this._getHtml();
 
     // Handle messages from webview
     webviewView.webview.onDidReceiveMessage(async (msg) => {
@@ -58,6 +44,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         case 'clear':
           this._messages = [{ role: 'system', content: SYSTEM_PROMPT }];
           this._abortController?.abort();
+          break;
+        case 'setModel':
+          await vscode.workspace
+            .getConfiguration('kursor')
+            .update('model', msg.model, vscode.ConfigurationTarget.Global);
           break;
       }
     });
@@ -118,23 +109,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private _getHtml(webview: vscode.Webview): string {
+  private _getHtml(): string {
     // Try compiled output location first, then source (for dev)
     let htmlPath = path.join(this._extensionUri.fsPath, 'out', 'chat', 'chat.html');
     if (!fs.existsSync(htmlPath)) {
       htmlPath = path.join(this._extensionUri.fsPath, 'src', 'chat', 'chat.html');
     }
-    let html = fs.readFileSync(htmlPath, 'utf8');
-
-    return html;
+    return fs.readFileSync(htmlPath, 'utf8');
   }
-}
-
-function getNonce() {
-  let text = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 32; i++) {
-    text += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return text;
 }
