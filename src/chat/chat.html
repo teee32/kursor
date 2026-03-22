@@ -20,19 +20,12 @@
     .topbar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       padding: 6px 12px;
       flex-shrink: 0;
       background: #181818;
     }
     .topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .topbar-icon {
-      color: #666;
-      font-size: 14px;
       display: flex;
       align-items: center;
     }
@@ -46,24 +39,21 @@
       padding: 3px 12px;
       cursor: default;
     }
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
     .topbar-btn {
       background: none;
-      border: none;
-      color: #666;
+      border: 1px solid #3a3a3a;
+      color: #ddd;
       cursor: pointer;
-      font-size: 16px;
-      padding: 4px 6px;
-      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 3px 12px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #2a2a2a;
     }
-    .topbar-btn:hover { color: #aaa; background: #2a2a2a; }
+    .topbar-btn:hover { border-color: #555; background: #303030; }
 
     /* ===== Composer input area at TOP ===== */
     .composer-area {
@@ -526,17 +516,7 @@
   <!-- Top navigation bar -->
   <div class="topbar">
     <div class="topbar-left">
-      <span class="topbar-icon">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
-      </span>
-      <span class="topbar-tab">New Chat</span>
-    </div>
-    <div class="topbar-right">
-      <button class="topbar-btn" id="newChatBtn" title="New chat">+</button>
-      <button class="topbar-btn" id="historyBtn" title="Chat history">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
-      </button>
-      <button class="topbar-btn" id="moreBtn" title="More options">...</button>
+      <button class="topbar-btn" id="newChatBtn" title="New chat">New Chat</button>
     </div>
   </div>
 
@@ -645,12 +625,46 @@
     let isStreaming = false;
     let currentAssistantEl = null;
     let codeBlockCounter = 0;
+    let currentMode = 'agent';
+
+    function saveState() {
+      vscode.setState({
+        chatHtml: chatContainer.innerHTML,
+        currentMode,
+        modelName: modelName.textContent,
+        userInput: userInput.value,
+      });
+    }
+
+    function restoreState() {
+      const state = vscode.getState();
+      if (!state) return;
+
+      if (state.chatHtml) {
+        chatContainer.innerHTML = state.chatHtml;
+        chatContainer.querySelectorAll('.msg-body').forEach(bindCodeBlockActions);
+      }
+      if (state.currentMode) {
+        currentMode = state.currentMode;
+        modeNameEl.textContent = currentMode === 'agent' ? 'Agent' : 'Ask';
+        modeIconEl.innerHTML = currentMode === 'agent' ? '&#8734;' : '&#9993;';
+      }
+      if (state.modelName) {
+        modelName.textContent = state.modelName;
+      }
+      if (typeof state.userInput === 'string') {
+        userInput.value = state.userInput;
+        userInput.style.height = 'auto';
+        userInput.style.height = Math.min(userInput.scrollHeight, 180) + 'px';
+      }
+    }
 
     // ===== Auto-resize textarea =====
     userInput.addEventListener('input', () => {
       userInput.style.height = 'auto';
       userInput.style.height = Math.min(userInput.scrollHeight, 180) + 'px';
       checkMentionTrigger();
+      saveState();
     });
 
     // ===== Send on Enter =====
@@ -759,6 +773,7 @@
       currentAssistantEl = null;
       stopBtnContainer.classList.remove('visible');
       userInput.focus();
+      saveState();
     });
 
     // ===== Stop generation =====
@@ -795,6 +810,7 @@
         modelName.textContent = item.textContent.replace('\u2713', '').trim();
         modelDropdown.classList.remove('show');
         vscode.postMessage({ type: 'setModel', model });
+        saveState();
       });
     });
 
@@ -811,6 +827,7 @@
       vscode.postMessage({ type: 'chat', content: text });
       isStreaming = true;
       stopBtnContainer.classList.add('visible');
+      saveState();
     }
 
     function addMessage(role, content) {
@@ -833,6 +850,7 @@
 
       chatContainer.appendChild(msgEl);
       scrollToBottom();
+      saveState();
       return msgEl;
     }
 
@@ -848,11 +866,13 @@
         '</div>';
       chatContainer.appendChild(el);
       scrollToBottom();
+      saveState();
     }
 
     function removeThinking() {
       const el = document.getElementById('thinkingIndicator');
       if (el) el.remove();
+      saveState();
     }
 
     function startStreamResponse() {
@@ -865,6 +885,7 @@
         '<div class="msg-body" id="' + id + '"></div>';
       chatContainer.appendChild(msgEl);
       currentAssistantEl = document.getElementById(id);
+      saveState();
     }
 
     function appendStreamChunk(text) {
@@ -873,6 +894,7 @@
       currentAssistantEl.setAttribute('data-raw', raw);
       currentAssistantEl.innerHTML = renderMarkdown(raw);
       scrollToBottom();
+      saveState();
     }
 
     function endStream() {
@@ -885,10 +907,10 @@
       currentAssistantEl = null;
       removeThinking();
       userInput.focus();
+      saveState();
     }
 
     // ===== Mode selector =====
-    let currentMode = 'agent';
     const modeSelector = document.getElementById('modeSelector');
     const modeNameEl = modeSelector.querySelector('span:nth-child(2)');
     const modeIconEl = modeSelector.querySelector('.mode-icon');
@@ -899,6 +921,7 @@
       modeNameEl.textContent = currentMode === 'agent' ? 'Agent' : 'Ask';
       modeIconEl.innerHTML = currentMode === 'agent' ? '&#8734;' : '&#9993;';
       vscode.postMessage({ type: 'setMode', mode: currentMode });
+      saveState();
     });
 
     // ===== Tool call UI =====
@@ -947,6 +970,7 @@
 
       chatContainer.appendChild(block);
       scrollToBottom();
+      saveState();
     }
 
     function showApprovalButtons(toolName, args, toolCallId) {
@@ -981,6 +1005,7 @@
 
       block.appendChild(approvalDiv);
       scrollToBottom();
+      saveState();
     }
 
     function handleToolCallComplete(toolCallId, result) {
@@ -1001,6 +1026,7 @@
       body.classList.add('collapsed');
       block.querySelector('.tool-call-header').classList.add('collapsed');
       scrollToBottom();
+      saveState();
     }
 
     // ===== Message handler =====
@@ -1031,6 +1057,7 @@
           showApprovalButtons(msg.toolName, msg.args, msg.toolCallId);
           break;
       }
+      saveState();
     });
 
     // ===== Code block actions =====
@@ -1057,6 +1084,8 @@
         });
       });
     }
+
+    restoreState();
 
     function scrollToBottom() {
       chatContainer.scrollTop = chatContainer.scrollHeight;
