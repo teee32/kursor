@@ -9,7 +9,7 @@ Why pay $20/month when you can have **Kursor Pro Max Ultra™**?
 ## Demo
 
 Click to play:
-[![Kursor Demo](demo/preview.png)](demo/kursor-demo.mp4)
+[![Kursor Demo](demo/preview.png)](demo/kursor-demo.m4v)
 
 ## Kursor vs Cursor
 
