@@ -2,71 +2,123 @@
 
 > The AI Code Editor that Cursor wishes it was.
 
-## What is this?
+**Kursor** is a free, open-source VSCode extension that brings the full Cursor AI experience — powered by **Kimi (Moonshot AI)**.
 
-**Kursor** is a VSCode extension that gives you the full Cursor AI experience — powered by **Kimi (Moonshot AI)** — for absolutely free.
+Why pay $20/month when you can have **Kursor Pro Max Ultra™**?
 
-Why pay $20/month for Cursor when you can have **Kursor Pro Max Ultra™**?
-
-## Kursor vs Cursor — An Honest Comparison
+## Kursor vs Cursor
 
 | Feature | Kursor | Cursor |
 |---------|--------|--------|
 | Price | **Free** | $20/month |
 | AI Model | Kimi (your choice) | Whatever they decide |
-| Open Source | **Yes** | Lol no |
-| Subscription | **Never** | Always |
-| Respects Your Wallet | ✅ | ❌ |
-| Name Coolness | K > C | - |
-| Made with | Love | VC money |
+| Open Source | **Yes** | No |
+| Agent Mode | ✅ | ✅ |
+| Code Search | ✅ | ✅ |
+| File Edit | ✅ | ✅ |
+| Terminal | ✅ | ✅ |
+| Name Coolness | K > C | — |
 
 ## Features
 
-- 🗨️ **AI Chat Sidebar** — Cursor-style chat panel, but free
-- ⌨️ **Inline Chat (Ctrl/Cmd+Shift+K)** — Edit code inline with AI, just like Cursor
-- 📝 **Code Context** — Automatically reads your current file and selection
-- 🌙 **Kimi API** — Powered by Moonshot AI, OpenAI-compatible
-- 🎭 **Tasteful Satire** — Every interaction reminds you how much money you're saving
+### 🤖 Agent Mode
+Kimi can autonomously search your codebase, read files, run commands, and edit code — just like Cursor Agent.
+
+- **searchWorkspace** — Find files by glob pattern or search contents by text
+- **readFile** — Read any file in your workspace
+- **runCommand** — Execute shell commands (with your approval)
+- **editFile** — Create or modify files (with your approval)
+
+Tool calls are displayed as collapsible cards with Accept/Reject buttons for dangerous operations.
+
+### 💬 AI Chat Sidebar
+Cursor-style chat panel with streaming responses, Markdown rendering, and syntax-highlighted code blocks.
+
+### ⌨️ Inline Chat
+Press `Cmd+Shift+K` (Mac) or `Ctrl+Shift+K` (Windows/Linux) to edit code inline with AI.
+
+### 📝 Smart Context
+Automatically includes your current file and selection as context. Use `@file`, `@selection`, `@currentFile` to reference specific context.
+
+### 🔧 Code Block Actions
+Every code block in chat has **Copy** and **Insert** buttons to quickly use generated code.
 
 ## Quick Start
 
 1. Install the extension
-2. Run `Kursor: Set Kimi API Key` from command palette
+2. Run **Kursor: Set Kimi API Key** from the command palette (`Cmd+Shift+P`)
 3. Get your free API key at [platform.moonshot.ai](https://platform.moonshot.ai/)
 4. Start chatting in the Kursor sidebar
-5. Use `Ctrl+Shift+K` / `Cmd+Shift+K` for inline code editing
+5. Toggle between **Agent** and **Ask** modes in the toolbar
 
 ## Supported Models
 
-- `moonshot-v1-8k` — Quick and nimble
-- `moonshot-v1-32k` — Balanced (default)
-- `moonshot-v1-128k` — Big brain energy
-- `kimi-k2.5` — The latest and greatest
+| Model | Context | Use Case |
+|-------|---------|----------|
+| `moonshot-v1-8k` | 8K | Quick questions |
+| `moonshot-v1-32k` | 32K | General coding (default) |
+| `moonshot-v1-128k` | 128K | Large file analysis |
+| `kimi-k2.5` | 256K | Latest model, best for Agent mode |
+
+## Configuration
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `kursor.apiKey` | — | Your Kimi API key |
+| `kursor.model` | `moonshot-v1-32k` | AI model to use |
+| `kursor.apiBase` | `https://api.moonshot.ai/v1` | API endpoint |
+| `kursor.temperature` | `0.7` | Response creativity (0–1) |
+| `kursor.agentMaxIterations` | `20` | Max tool call rounds per turn |
+| `kursor.commandTimeout` | `30000` | Shell command timeout (ms) |
 
 ## Development
 
 ```bash
+git clone https://github.com/teee32/kursor.git
 cd kursor
 npm install
 npm run compile
 # Press F5 in VSCode to launch Extension Development Host
 ```
 
-Packaging the extension currently requires `Node 20.18.1+` because of the `vsce` toolchain.
+> **Note:** Packaging requires Node 20.18.1+ (`npm run package`).
 
-## Testing
+## Project Structure
 
-- Compile check: `npm run compile`
-- Packaging gate: `npm run verify-node`
-- Manual regression evidence: `docs/manual-regression/2026-03-22.md`
+```
+kursor/
+├── src/
+│   ├── extension.ts          # Extension entry point
+│   ├── api/
+│   │   ├── kimi.ts           # Kimi API client (streaming + tool calling)
+│   │   └── types.ts          # TypeScript interfaces
+│   ├── chat/
+│   │   ├── ChatProvider.ts   # Webview provider (Agent/Ask orchestration)
+│   │   └── chat.html         # Chat UI (Cursor-style)
+│   ├── inline/
+│   │   └── InlineProvider.ts # Inline chat (Cmd+Shift+K)
+│   ├── agent/
+│   │   ├── tools.ts          # Tool definitions (OpenAI function calling format)
+│   │   ├── toolExecutor.ts   # Tool execution (search, read, run, edit)
+│   │   ├── agentLoop.ts      # Agent conversation loop
+│   │   └── agentPrompt.ts    # Agent system prompt
+│   └── branding/
+│       └── messages.ts       # UI text and satirical messages
+├── media/
+│   └── icon.svg              # Extension icon
+├── package.json
+├── tsconfig.json
+├── LICENSE
+└── CHANGELOG.md
+```
 
 ## Disclaimer
 
-This project is a satirical, educational project. Cursor is a great product (we just think Kimi deserves some love too). No Cursor engineers were harmed in the making of this extension.
+This is a satirical, educational project. Cursor is a great product — we just think Kimi deserves some love too. No Cursor engineers were harmed in the making of this extension.
 
 ## License
 
-MIT — Because unlike some editors, we believe in freedom.
+[MIT](LICENSE) — Because unlike some editors, we believe in freedom.
 
 ---
 

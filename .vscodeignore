@@ -3,5 +3,10 @@ node_modules/
 *.vsix
 .vscode-test/
 tsconfig.json
+docs/
+scripts/
 **/*.ts
 !out/**
+.gitignore
+.DS_Store
+CHANGELOG.md
