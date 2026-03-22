@@ -2,7 +2,7 @@
   "name": "kursor",
   "displayName": "Kursor",
   "description": "The AI Code Editor that Cursor wishes it was. Powered by Kimi — because we have taste.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "kursor-team",
   "engines": {
     "vscode": "^1.85.0"
@@ -18,7 +18,8 @@
     "cursor",
     "kursor",
     "code assistant",
-    "moonshot"
+    "moonshot",
+    "agent"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -96,6 +97,20 @@
           "minimum": 0,
           "maximum": 1,
           "description": "Temperature for responses (0-1). Unlike some editors, we respect API limits."
+        },
+        "kursor.agentMaxIterations": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum tool call iterations in Agent mode. Safety limit to prevent infinite loops."
+        },
+        "kursor.commandTimeout": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 5000,
+          "maximum": 120000,
+          "description": "Timeout for shell command execution in milliseconds (Agent mode)."
         }
       }
     }

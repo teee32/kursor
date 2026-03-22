@@ -454,6 +454,71 @@
       text-decoration: none;
     }
     .msg-body a:hover { text-decoration: underline; }
+
+    /* ===== Tool call blocks ===== */
+    .tool-call-block {
+      margin: 8px 0 8px 24px;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      overflow: hidden;
+      animation: fadeIn 0.2s ease;
+    }
+    .tool-call-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: #1e1e1e;
+      cursor: pointer;
+      font-size: 12px;
+      color: #999;
+      gap: 8px;
+      user-select: none;
+    }
+    .tool-call-header:hover { background: #222; }
+    .tool-call-header .tool-icon { font-size: 13px; }
+    .tool-call-header .tool-name { color: #ddd; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tool-call-header .tool-status { margin-left: auto; font-size: 11px; white-space: nowrap; }
+    .tool-call-header .tool-chevron { transition: transform 0.2s; font-size: 10px; }
+    .tool-call-header.collapsed .tool-chevron { transform: rotate(-90deg); }
+    .tool-call-body {
+      padding: 8px 12px;
+      background: #161616;
+      font-size: 11px;
+      font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+      color: #999;
+      max-height: 200px;
+      overflow-y: auto;
+      border-top: 1px solid #2a2a2a;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .tool-call-body.collapsed { display: none; }
+    .tool-approval {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #1a1a1a;
+      border-top: 1px solid #2a2a2a;
+    }
+    .tool-approval-btn {
+      padding: 4px 16px;
+      border-radius: 4px;
+      border: 1px solid #3a3a3a;
+      cursor: pointer;
+      font-size: 12px;
+      background: none;
+    }
+    .tool-approval-btn:hover { opacity: 0.85; }
+    .tool-approval-btn.accept {
+      background: #1a3a1a;
+      color: #4ec9b0;
+      border-color: #2a5a2a;
+    }
+    .tool-approval-btn.reject {
+      background: #3a1a1a;
+      color: #f44747;
+      border-color: #5a2a2a;
+    }
   </style>
 </head>
 <body>
@@ -822,6 +887,122 @@
       userInput.focus();
     }
 
+    // ===== Mode selector =====
+    let currentMode = 'agent';
+    const modeSelector = document.getElementById('modeSelector');
+    const modeNameEl = modeSelector.querySelector('span:nth-child(2)');
+    const modeIconEl = modeSelector.querySelector('.mode-icon');
+
+    modeSelector.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentMode = currentMode === 'agent' ? 'ask' : 'agent';
+      modeNameEl.textContent = currentMode === 'agent' ? 'Agent' : 'Ask';
+      modeIconEl.innerHTML = currentMode === 'agent' ? '&#8734;' : '&#9993;';
+      vscode.postMessage({ type: 'setMode', mode: currentMode });
+    });
+
+    // ===== Tool call UI =====
+    function handleToolCallStart(toolName, args, toolCallId) {
+      removeThinking();
+      // Finalize any current streaming text
+      if (currentAssistantEl) {
+        bindCodeBlockActions(currentAssistantEl);
+        currentAssistantEl = null;
+      }
+
+      const es = document.getElementById('emptyState');
+      if (es) es.remove();
+
+      let icon = '', summary = '';
+      switch (toolName) {
+        case 'searchWorkspace':
+          icon = '&#128269;'; summary = 'Searching: ' + (args.glob || args.query || '...'); break;
+        case 'readFile':
+          icon = '&#128196;'; summary = 'Reading: ' + (args.path || '...'); break;
+        case 'runCommand':
+          icon = '&#9889;'; summary = 'Run: ' + (args.command || '...'); break;
+        case 'editFile':
+          icon = '&#9998;'; summary = 'Edit: ' + (args.path || '...'); break;
+        default:
+          icon = '&#9881;'; summary = toolName;
+      }
+
+      const block = document.createElement('div');
+      block.className = 'tool-call-block';
+      block.id = 'tool_' + toolCallId;
+      block.innerHTML =
+        '<div class="tool-call-header" data-id="' + toolCallId + '">' +
+          '<span class="tool-icon">' + icon + '</span>' +
+          '<span class="tool-name">' + escapeHtml(summary) + '</span>' +
+          '<span class="tool-status">&#9203; Running...</span>' +
+          '<span class="tool-chevron">&#9662;</span>' +
+        '</div>' +
+        '<div class="tool-call-body" id="tool_body_' + toolCallId + '">Executing...</div>';
+
+      block.querySelector('.tool-call-header').addEventListener('click', function() {
+        const body = document.getElementById('tool_body_' + toolCallId);
+        body.classList.toggle('collapsed');
+        this.classList.toggle('collapsed');
+      });
+
+      chatContainer.appendChild(block);
+      scrollToBottom();
+    }
+
+    function showApprovalButtons(toolName, args, toolCallId) {
+      const block = document.getElementById('tool_' + toolCallId);
+      if (!block) return;
+
+      block.querySelector('.tool-status').innerHTML = '&#9208; Approval needed';
+      const body = document.getElementById('tool_body_' + toolCallId);
+      if (toolName === 'runCommand') {
+        body.textContent = '$ ' + (args.command || '');
+      } else if (toolName === 'editFile') {
+        body.textContent = (args.description || 'Edit file: ' + args.path);
+      }
+
+      const approvalDiv = document.createElement('div');
+      approvalDiv.className = 'tool-approval';
+      approvalDiv.innerHTML =
+        '<button class="tool-approval-btn accept" data-id="' + toolCallId + '">&#10003; Accept</button>' +
+        '<button class="tool-approval-btn reject" data-id="' + toolCallId + '">&#10005; Reject</button>';
+
+      approvalDiv.querySelector('.accept').addEventListener('click', function() {
+        vscode.postMessage({ type: 'toolApproval', toolCallId: toolCallId, approved: true });
+        approvalDiv.remove();
+        block.querySelector('.tool-status').innerHTML = '&#9654; Running...';
+      });
+      approvalDiv.querySelector('.reject').addEventListener('click', function() {
+        vscode.postMessage({ type: 'toolApproval', toolCallId: toolCallId, approved: false });
+        approvalDiv.remove();
+        block.querySelector('.tool-status').innerHTML = '&#10005; Rejected';
+        block.querySelector('.tool-status').style.color = '#f44747';
+      });
+
+      block.appendChild(approvalDiv);
+      scrollToBottom();
+    }
+
+    function handleToolCallComplete(toolCallId, result) {
+      const block = document.getElementById('tool_' + toolCallId);
+      if (!block) return;
+
+      const status = block.querySelector('.tool-status');
+      if (result.success) {
+        status.innerHTML = '&#10003; Done';
+        status.style.color = '#4ec9b0';
+      } else {
+        status.innerHTML = '&#10005; Failed';
+        status.style.color = '#f44747';
+      }
+
+      const body = document.getElementById('tool_body_' + toolCallId);
+      body.textContent = result.output || result.error || '(no output)';
+      body.classList.add('collapsed');
+      block.querySelector('.tool-call-header').classList.add('collapsed');
+      scrollToBottom();
+    }
+
     // ===== Message handler =====
     window.addEventListener('message', (event) => {
       const msg = event.data;
@@ -839,6 +1020,15 @@
           removeThinking();
           addMessage('assistant', '&#10060; ' + escapeHtml(msg.content));
           endStream();
+          break;
+        case 'toolCallStart':
+          handleToolCallStart(msg.toolName, msg.args, msg.toolCallId);
+          break;
+        case 'toolCallComplete':
+          handleToolCallComplete(msg.toolCallId, msg.result);
+          break;
+        case 'toolApprovalRequest':
+          showApprovalButtons(msg.toolName, msg.args, msg.toolCallId);
           break;
       }
     });
