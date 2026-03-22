@@ -24,6 +24,11 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/teee32/kursor"
+  },
+  "license": "MIT",
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
