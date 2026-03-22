@@ -43,13 +43,72 @@ Automatically includes your current file and selection as context. Use `@file`, 
 ### 🔧 Code Block Actions
 Every code block in chat has **Copy** and **Insert** buttons to quickly use generated code.
 
-## Quick Start
+## Installation
 
-1. Install the extension
-2. Run **Kursor: Set Kimi API Key** from the command palette (`Cmd+Shift+P`)
-3. Get your free API key at [platform.moonshot.ai](https://platform.moonshot.ai/)
-4. Start chatting in the Kursor sidebar
-5. Toggle between **Agent** and **Ask** modes in the toolbar
+### Step 1: Download Kursor
+
+Download the latest `kursor-X.X.X.vsix` from the [Releases page](https://github.com/teee32/kursor/releases).
+
+### Step 2: Install the VSIX
+
+**Option A — VSCode GUI (recommended):**
+1. Open VSCode
+2. Go to the **Extensions** view (`Cmd+Shift+X`)
+3. Click the `···` menu (top-right of the extensions panel)
+4. Select **Install from VSIX...**
+5. Choose the downloaded `.vsix` file
+
+**Option B — Command line:**
+```bash
+code --install-extension kursor-0.0.2.vsix
+```
+
+### Step 3: Get a Kimi API Key (free)
+
+1. Go to [platform.moonshot.ai](https://platform.moonshot.ai/)
+2. Sign up / log in (supports phone number, WeChat, GitHub OAuth)
+3. Navigate to **API Keys** in the sidebar
+4. Click **Create API Key** → copy the key (starts with `sk-`)
+5. Kimi offers free quota on registration — no credit card required
+
+### Step 4: Configure Kursor
+
+1. Open VSCode command palette:
+   - **Mac:** `Cmd+Shift+P`
+   - **Windows/Linux:** `Ctrl+Shift+P`
+2. Type and select **Kursor: Set Kimi API Key**
+3. Paste your API key and press `Enter`
+
+### Step 5: Open a Workspace Folder
+
+Agent mode requires an open workspace folder (not just a single file):
+
+1. `Cmd+O` / `Ctrl+O` to open a folder
+2. Or drag a folder into VSCode
+3. The Kursor sidebar will show "Agent mode requires an open workspace folder" if none is open
+
+### Step 6: Start Chatting!
+
+- **Open Kursor:** Click the **K** icon in the VSCode activity bar (left sidebar)
+- **Send a message:** Type in the composer at the top and press `Enter`
+- **Agent mode:** Kimi can read files, search code, run commands, and edit files autonomously
+- **Ask mode:** Simple question-answering without tool access
+- **Switch modes:** Click the **Agent** / **Ask** button in the toolbar
+- **Change model:** Click the model name dropdown (top-right of composer) to switch between Kimi models
+- **Inline chat:** Press `Cmd+Shift+K` / `Ctrl+Shift+K` for quick inline edits
+
+### Optional: Configure Settings
+
+All settings are available via **File → Preferences → Settings → Extensions → Kursor**:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `kursor.apiKey` | — | Your Kimi API key |
+| `kursor.model` | `moonshot-v1-32k` | AI model to use |
+| `kursor.apiBase` | `https://api.moonshot.ai/v1` | API endpoint (change for proxies) |
+| `kursor.temperature` | `0.7` | Response creativity, 0 (precise) to 1 (creative) |
+| `kursor.agentMaxIterations` | `20` | Max tool call rounds per turn (safety limit) |
+| `kursor.commandTimeout` | `30000` | Shell command timeout in milliseconds |
 
 ## Supported Models
 
@@ -59,17 +118,6 @@ Every code block in chat has **Copy** and **Insert** buttons to quickly use gene
 | `moonshot-v1-32k` | 32K | General coding (default) |
 | `moonshot-v1-128k` | 128K | Large file analysis |
 | `kimi-k2.5` | 256K | Latest model, best for Agent mode |
-
-## Configuration
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `kursor.apiKey` | — | Your Kimi API key |
-| `kursor.model` | `moonshot-v1-32k` | AI model to use |
-| `kursor.apiBase` | `https://api.moonshot.ai/v1` | API endpoint |
-| `kursor.temperature` | `0.7` | Response creativity (0–1) |
-| `kursor.agentMaxIterations` | `20` | Max tool call rounds per turn |
-| `kursor.commandTimeout` | `30000` | Shell command timeout (ms) |
 
 ## Development
 
@@ -81,7 +129,13 @@ npm run compile
 # Press F5 in VSCode to launch Extension Development Host
 ```
 
-> **Note:** Packaging requires Node 20.18.1+ (`npm run package`).
+**To package a new release:**
+```bash
+npm run package
+# Output: kursor-X.X.X.vsix
+```
+
+> **Note:** Packaging requires Node 20.18.1+. Run `npm run verify-node` to check.
 
 ## Project Structure
 
