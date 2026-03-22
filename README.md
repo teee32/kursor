@@ -40,10 +40,10 @@ Tool calls are displayed as collapsible cards with Accept/Reject buttons for dan
 Cursor-style chat panel with streaming responses, Markdown rendering, and syntax-highlighted code blocks.
 
 ### ⌨️ Inline Chat
-Press `Cmd+Shift+K` (Mac) or `Ctrl+Shift+K` (Windows/Linux) to edit code inline with AI.
+Press `Ctrl+Shift+K` to edit code inline with AI.
 
 ### 📝 Smart Context
-Automatically includes your current file and selection as context. Use `@file`, `@selection`, `@currentFile` to reference specific context.
+Automatically includes your current file and selection as context. Use `@file`, `@selection`, `@currentFile`, `@errors` to reference specific context.
 
 ### 🔧 Code Block Actions
 Every code block in chat has **Copy** and **Insert** buttons to quickly use generated code.
@@ -100,7 +100,7 @@ Agent mode requires an open workspace folder (not just a single file):
 - **Ask mode:** Simple question-answering without tool access
 - **Switch modes:** Click the **Agent** / **Ask** button in the toolbar
 - **Change model:** Click the model name dropdown (top-right of composer) to switch between Kimi models
-- **Inline chat:** Press `Cmd+Shift+K` / `Ctrl+Shift+K` for quick inline edits
+- **Inline chat:** Press `Ctrl+Shift+K` for quick inline edits
 
 ### Optional: Configure Settings
 
@@ -155,7 +155,7 @@ kursor/
 │   │   ├── ChatProvider.ts   # Webview provider (Agent/Ask orchestration)
 │   │   └── chat.html         # Chat UI (Cursor-style)
 │   ├── inline/
-│   │   └── InlineProvider.ts # Inline chat (Cmd+Shift+K)
+│   │   └── InlineProvider.ts # Inline chat (Ctrl+Shift+K)
 │   ├── agent/
 │   │   ├── tools.ts          # Tool definitions (OpenAI function calling format)
 │   │   ├── toolExecutor.ts   # Tool execution (search, read, run, edit)
