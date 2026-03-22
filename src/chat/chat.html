@@ -16,7 +16,7 @@
       overflow: hidden;
     }
 
-    /* ===== Top nav bar — matches Cursor exactly ===== */
+    /* ===== Top nav bar ===== */
     .topbar {
       display: flex;
       align-items: center;
@@ -65,7 +65,7 @@
     }
     .topbar-btn:hover { color: #aaa; background: #2a2a2a; }
 
-    /* ===== Input area at TOP — the key Cursor difference ===== */
+    /* ===== Composer input area at TOP ===== */
     .composer-area {
       padding: 8px 12px 0 12px;
       flex-shrink: 0;
@@ -131,15 +131,8 @@
       user-select: none;
     }
     .mode-selector:hover { border-color: #555; }
-    .mode-selector .mode-icon {
-      font-size: 13px;
-      color: #888;
-    }
-    .mode-selector .mode-arrow {
-      font-size: 9px;
-      color: #666;
-      margin-left: 2px;
-    }
+    .mode-selector .mode-icon { font-size: 13px; color: #888; }
+    .mode-selector .mode-arrow { font-size: 9px; color: #666; margin-left: 2px; }
     .model-label {
       font-size: 12px;
       color: #666;
@@ -150,9 +143,7 @@
       user-select: none;
     }
     .model-label:hover { color: #999; }
-    .model-label .model-arrow {
-      font-size: 9px;
-    }
+    .model-label .model-arrow { font-size: 9px; }
     .toolbar-icon-btn {
       background: none;
       border: none;
@@ -184,12 +175,8 @@
       user-select: none;
     }
     .context-label:hover { color: #999; }
-    .context-label .ctx-icon {
-      font-size: 13px;
-    }
-    .context-label .ctx-arrow {
-      font-size: 9px;
-    }
+    .context-label .ctx-icon { font-size: 13px; }
+    .context-label .ctx-arrow { font-size: 9px; }
 
     /* ===== Chat messages area ===== */
     .chat-container {
@@ -206,7 +193,6 @@
       border-radius: 3px;
     }
 
-    /* Empty state */
     .empty-state {
       flex: 1;
       display: flex;
@@ -250,19 +236,66 @@
       padding-left: 24px;
       overflow-wrap: break-word;
     }
-    .msg-body.user-msg {
-      color: #ddd;
+    .msg-body.user-msg { color: #ddd; }
+
+    /* Code blocks with copy + insert buttons */
+    .code-block-wrapper {
+      position: relative;
+      margin: 8px 0;
     }
-    .msg-body pre {
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 4px 8px 4px 14px;
+      font-size: 11px;
+      color: #666;
+    }
+    .code-block-header .lang-label {
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .code-block-actions {
+      display: flex;
+      gap: 2px;
+    }
+    .code-action-btn {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .code-action-btn:hover { color: #ccc; background: #2a2a2a; }
+    .code-action-btn.copied { color: #4ec9b0; }
+    .code-block-wrapper pre {
       background: #111;
       border: 1px solid #2a2a2a;
-      border-radius: 8px;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
       padding: 12px 14px;
-      margin: 8px 0;
+      margin: 0;
       overflow-x: auto;
       font-size: 12px;
       line-height: 1.5;
     }
+    .code-block-wrapper pre code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+      background: none;
+      padding: 0;
+      color: #d4d4d4;
+    }
+
+    /* Inline code */
     .msg-body code {
       font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
       background: #222;
@@ -270,10 +303,21 @@
       border-radius: 3px;
       font-size: 12px;
     }
-    .msg-body pre code {
-      background: none;
-      padding: 0;
-    }
+
+    /* Syntax highlighting */
+    .hljs-keyword, .hljs-selector-tag { color: #569cd6; }
+    .hljs-string, .hljs-attr { color: #ce9178; }
+    .hljs-number { color: #b5cea8; }
+    .hljs-comment { color: #6a9955; font-style: italic; }
+    .hljs-function { color: #dcdcaa; }
+    .hljs-built_in { color: #4ec9b0; }
+    .hljs-title { color: #dcdcaa; }
+    .hljs-params { color: #9cdcfe; }
+    .hljs-type { color: #4ec9b0; }
+    .hljs-meta { color: #c586c0; }
+    .hljs-variable { color: #9cdcfe; }
+    .hljs-operator { color: #d4d4d4; }
+    .hljs-punctuation { color: #d4d4d4; }
 
     /* Thinking dots */
     .thinking {
@@ -299,7 +343,36 @@
       40% { opacity: 1; }
     }
 
-    /* Model dropdown (hidden by default) */
+    /* Stop generation button */
+    .stop-btn-container {
+      display: none;
+      justify-content: center;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+    .stop-btn-container.visible { display: flex; }
+    .stop-btn {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 5px 16px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .stop-btn:hover { background: #333; border-color: #555; }
+    .stop-icon {
+      width: 10px;
+      height: 10px;
+      background: #ccc;
+      border-radius: 2px;
+    }
+
+    /* Model dropdown */
     .dropdown-menu {
       display: none;
       position: absolute;
@@ -325,6 +398,62 @@
     .dropdown-item:hover { background: #333; }
     .dropdown-item.active { color: #fff; }
     .dropdown-item .check { color: #888; font-size: 11px; }
+
+    /* @ mention autocomplete */
+    .mention-popup {
+      display: none;
+      position: absolute;
+      background: #252525;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      padding: 4px;
+      z-index: 200;
+      min-width: 220px;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .mention-popup.show { display: block; }
+    .mention-item {
+      padding: 6px 12px;
+      font-size: 12px;
+      color: #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mention-item:hover, .mention-item.selected { background: #333; color: #fff; }
+    .mention-item .mention-icon { color: #888; font-size: 13px; }
+    .mention-item .mention-desc { color: #666; font-size: 11px; margin-left: auto; }
+
+    /* Markdown lists */
+    .msg-body ul, .msg-body ol {
+      padding-left: 20px;
+      margin: 6px 0;
+    }
+    .msg-body li {
+      margin: 2px 0;
+    }
+    .msg-body h1, .msg-body h2, .msg-body h3 {
+      color: #ddd;
+      margin: 10px 0 4px 0;
+    }
+    .msg-body h1 { font-size: 16px; }
+    .msg-body h2 { font-size: 14px; }
+    .msg-body h3 { font-size: 13px; }
+    .msg-body blockquote {
+      border-left: 3px solid #444;
+      padding-left: 12px;
+      color: #999;
+      margin: 6px 0;
+    }
+    .msg-body a {
+      color: #569cd6;
+      text-decoration: none;
+    }
+    .msg-body a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -391,9 +520,17 @@
     </div>
   </div>
 
-  <!-- Chat messages (below input, like Cursor) -->
+  <!-- Chat messages -->
   <div class="chat-container" id="chatContainer">
     <div class="empty-state" id="emptyState"></div>
+  </div>
+
+  <!-- Stop generation button -->
+  <div class="stop-btn-container" id="stopBtnContainer">
+    <button class="stop-btn" id="stopBtn">
+      <div class="stop-icon"></div>
+      Stop generating
+    </button>
   </div>
 
   <!-- Model dropdown -->
@@ -404,42 +541,169 @@
     <div class="dropdown-item" data-model="moonshot-v1-8k">Moonshot 8K</div>
   </div>
 
+  <!-- @ mention popup -->
+  <div class="mention-popup" id="mentionPopup">
+    <div class="mention-item" data-mention="file">
+      <span class="mention-icon">&#128196;</span>
+      <span>@file</span>
+      <span class="mention-desc">Reference a file</span>
+    </div>
+    <div class="mention-item" data-mention="selection">
+      <span class="mention-icon">&#9998;</span>
+      <span>@selection</span>
+      <span class="mention-desc">Current selection</span>
+    </div>
+    <div class="mention-item" data-mention="currentFile">
+      <span class="mention-icon">&#128196;</span>
+      <span>@currentFile</span>
+      <span class="mention-desc">Active editor file</span>
+    </div>
+    <div class="mention-item" data-mention="errors">
+      <span class="mention-icon">&#9888;</span>
+      <span>@errors</span>
+      <span class="mention-desc">Workspace errors</span>
+    </div>
+  </div>
+
   <script>
     const vscode = acquireVsCodeApi();
     const chatContainer = document.getElementById('chatContainer');
-    const emptyState = document.getElementById('emptyState');
     const userInput = document.getElementById('userInput');
     const newChatBtn = document.getElementById('newChatBtn');
     const modelSelector = document.getElementById('modelSelector');
     const modelDropdown = document.getElementById('modelDropdown');
     const modelName = document.getElementById('modelName');
+    const stopBtnContainer = document.getElementById('stopBtnContainer');
+    const stopBtn = document.getElementById('stopBtn');
+    const mentionPopup = document.getElementById('mentionPopup');
 
     let isStreaming = false;
     let currentAssistantEl = null;
+    let codeBlockCounter = 0;
 
-    // Auto-resize textarea
+    // ===== Auto-resize textarea =====
     userInput.addEventListener('input', () => {
       userInput.style.height = 'auto';
       userInput.style.height = Math.min(userInput.scrollHeight, 180) + 'px';
+      checkMentionTrigger();
     });
 
-    // Send on Enter (Shift+Enter for newline)
+    // ===== Send on Enter =====
     userInput.addEventListener('keydown', (e) => {
+      // Handle mention popup navigation
+      if (mentionPopup.classList.contains('show')) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          navigateMention(e.key === 'ArrowDown' ? 1 : -1);
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          selectMention();
+          return;
+        }
+        if (e.key === 'Escape') {
+          mentionPopup.classList.remove('show');
+          return;
+        }
+      }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
       }
     });
 
-    // New chat
+    // ===== @ mention system =====
+    function checkMentionTrigger() {
+      const val = userInput.value;
+      const pos = userInput.selectionStart;
+      // Find the last @ before cursor
+      const before = val.substring(0, pos);
+      const atIdx = before.lastIndexOf('@');
+      if (atIdx === -1 || (atIdx > 0 && before[atIdx - 1] !== ' ' && before[atIdx - 1] !== '\n')) {
+        mentionPopup.classList.remove('show');
+        return;
+      }
+      const query = before.substring(atIdx + 1).toLowerCase();
+      if (query.includes(' ') || query.length > 20) {
+        mentionPopup.classList.remove('show');
+        return;
+      }
+
+      // Filter items
+      const items = mentionPopup.querySelectorAll('.mention-item');
+      let anyVisible = false;
+      items.forEach(item => {
+        const text = item.dataset.mention.toLowerCase();
+        if (text.includes(query)) {
+          item.style.display = 'flex';
+          anyVisible = true;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      if (anyVisible) {
+        const rect = userInput.getBoundingClientRect();
+        mentionPopup.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+        mentionPopup.style.left = '14px';
+        mentionPopup.classList.add('show');
+        // Select first visible
+        items.forEach(i => i.classList.remove('selected'));
+        const firstVisible = [...items].find(i => i.style.display !== 'none');
+        if (firstVisible) firstVisible.classList.add('selected');
+      } else {
+        mentionPopup.classList.remove('show');
+      }
+    }
+
+    function navigateMention(dir) {
+      const items = [...mentionPopup.querySelectorAll('.mention-item')].filter(i => i.style.display !== 'none');
+      const currentIdx = items.findIndex(i => i.classList.contains('selected'));
+      items.forEach(i => i.classList.remove('selected'));
+      const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + dir));
+      items[nextIdx].classList.add('selected');
+    }
+
+    function selectMention() {
+      const selected = mentionPopup.querySelector('.mention-item.selected');
+      if (!selected) return;
+      const mention = selected.dataset.mention;
+      const val = userInput.value;
+      const pos = userInput.selectionStart;
+      const before = val.substring(0, pos);
+      const atIdx = before.lastIndexOf('@');
+      userInput.value = val.substring(0, atIdx) + '@' + mention + ' ' + val.substring(pos);
+      userInput.selectionStart = userInput.selectionEnd = atIdx + mention.length + 2;
+      mentionPopup.classList.remove('show');
+      userInput.focus();
+    }
+
+    mentionPopup.querySelectorAll('.mention-item').forEach(item => {
+      item.addEventListener('click', () => {
+        mentionPopup.querySelectorAll('.mention-item').forEach(i => i.classList.remove('selected'));
+        item.classList.add('selected');
+        selectMention();
+      });
+    });
+
+    // ===== New chat =====
     newChatBtn.addEventListener('click', () => {
       vscode.postMessage({ type: 'clear' });
       chatContainer.innerHTML = '<div class="empty-state" id="emptyState"></div>';
       currentAssistantEl = null;
+      stopBtnContainer.classList.remove('visible');
       userInput.focus();
     });
 
-    // Model dropdown toggle
+    // ===== Stop generation =====
+    stopBtn.addEventListener('click', () => {
+      vscode.postMessage({ type: 'stop' });
+      stopBtnContainer.classList.remove('visible');
+      endStream();
+    });
+
+    // ===== Model dropdown =====
     modelSelector.addEventListener('click', (e) => {
       e.stopPropagation();
       const rect = modelSelector.getBoundingClientRect();
@@ -450,6 +714,7 @@
 
     document.addEventListener('click', () => {
       modelDropdown.classList.remove('show');
+      mentionPopup.classList.remove('show');
     });
 
     modelDropdown.querySelectorAll('.dropdown-item').forEach(item => {
@@ -457,33 +722,33 @@
         const model = item.dataset.model;
         modelDropdown.querySelectorAll('.dropdown-item').forEach(i => {
           i.classList.remove('active');
-          i.querySelector('.check')?.remove();
+          const c = i.querySelector('.check');
+          if (c) c.remove();
         });
         item.classList.add('active');
         item.innerHTML += ' <span class="check">&#10003;</span>';
-        modelName.textContent = item.textContent.replace('✓', '').trim();
+        modelName.textContent = item.textContent.replace('\u2713', '').trim();
         modelDropdown.classList.remove('show');
         vscode.postMessage({ type: 'setModel', model });
       });
     });
 
+    // ===== Send message =====
     function sendMessage() {
       const text = userInput.value.trim();
       if (!text || isStreaming) return;
 
       addMessage('user', text);
-
       userInput.value = '';
       userInput.style.height = 'auto';
-
       showThinking();
 
       vscode.postMessage({ type: 'chat', content: text });
       isStreaming = true;
+      stopBtnContainer.classList.add('visible');
     }
 
     function addMessage(role, content) {
-      // Remove empty state if present
       const es = document.getElementById('emptyState');
       if (es) es.remove();
 
@@ -547,11 +812,17 @@
 
     function endStream() {
       isStreaming = false;
+      stopBtnContainer.classList.remove('visible');
+      // Bind code block action buttons after stream ends
+      if (currentAssistantEl) {
+        bindCodeBlockActions(currentAssistantEl);
+      }
       currentAssistantEl = null;
       removeThinking();
       userInput.focus();
     }
 
+    // ===== Message handler =====
     window.addEventListener('message', (event) => {
       const msg = event.data;
       switch (msg.type) {
@@ -572,6 +843,31 @@
       }
     });
 
+    // ===== Code block actions =====
+    function bindCodeBlockActions(container) {
+      container.querySelectorAll('.code-action-copy').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const wrapper = btn.closest('.code-block-wrapper');
+          const code = wrapper.querySelector('code').textContent;
+          navigator.clipboard.writeText(code).then(() => {
+            btn.classList.add('copied');
+            btn.innerHTML = '&#10003; Copied';
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.innerHTML = 'Copy';
+            }, 2000);
+          });
+        });
+      });
+      container.querySelectorAll('.code-action-insert').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const wrapper = btn.closest('.code-block-wrapper');
+          const code = wrapper.querySelector('code').textContent;
+          vscode.postMessage({ type: 'insertCode', content: code });
+        });
+      });
+    }
+
     function scrollToBottom() {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -582,16 +878,88 @@
       return div.innerHTML;
     }
 
+    // ===== Enhanced Markdown renderer =====
     function renderMarkdown(text) {
       if (!text) return '';
       let html = escapeHtml(text);
-      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
-        '<pre><code class="language-' + lang + '">' + code.trim() + '</code></pre>');
+
+      // Code blocks with language and actions
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+        codeBlockCounter++;
+        const langLabel = lang || 'code';
+        const highlighted = highlightSyntax(code.trim(), lang);
+        return '<div class="code-block-wrapper">' +
+          '<div class="code-block-header">' +
+            '<span class="lang-label">' + langLabel + '</span>' +
+            '<div class="code-block-actions">' +
+              '<button class="code-action-btn code-action-copy">Copy</button>' +
+              '<button class="code-action-btn code-action-insert">Insert</button>' +
+            '</div>' +
+          '</div>' +
+          '<pre><code class="language-' + lang + '">' + highlighted + '</code></pre>' +
+        '</div>';
+      });
+
+      // Inline code
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Headers
+      html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+      html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+      // Bold and italic
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      // Links
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$1" title="$2">$1</a>');
+      // Blockquotes
+      html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+      // Unordered lists
+      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+      // Ordered lists
+      html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+      // Line breaks (but not inside code blocks)
       html = html.replace(/\n/g, '<br>');
+      // Clean up extra <br> after block elements
+      html = html.replace(/<\/(h[1-3]|blockquote|ul|ol|li|pre|div)><br>/g, '</$1>');
+      html = html.replace(/<br><(h[1-3]|blockquote|ul|ol)/g, '<$1');
+
       return html;
+    }
+
+    // ===== Basic syntax highlighting =====
+    function highlightSyntax(code, lang) {
+      if (!lang) return code;
+
+      // Keywords by language
+      const keywords = {
+        'javascript': /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|class|extends|import|export|from|default|async|await|try|catch|throw|typeof|instanceof|in|of|yield|delete|void|null|undefined|true|false)\b/g,
+        'typescript': /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|class|extends|import|export|from|default|async|await|try|catch|throw|typeof|instanceof|in|of|yield|delete|void|null|undefined|true|false|type|interface|enum|implements|abstract|private|public|protected|readonly|as|is|keyof|infer|never|unknown|any|string|number|boolean|object|symbol|bigint)\b/g,
+        'python': /\b(def|class|return|if|elif|else|for|while|break|continue|import|from|as|try|except|raise|with|pass|lambda|yield|global|nonlocal|assert|del|in|is|not|and|or|True|False|None|self|async|await|print)\b/g,
+        'java': /\b(public|private|protected|static|final|abstract|class|interface|extends|implements|return|if|else|for|while|do|switch|case|break|continue|new|this|super|try|catch|throw|throws|import|package|void|int|long|double|float|boolean|char|byte|short|null|true|false|instanceof)\b/g,
+        'go': /\b(func|return|if|else|for|range|switch|case|break|continue|package|import|var|const|type|struct|interface|map|chan|go|defer|select|default|nil|true|false|make|len|append|string|int|bool|error|byte|rune)\b/g,
+        'rust': /\b(fn|let|mut|return|if|else|for|while|loop|match|break|continue|use|mod|pub|struct|enum|impl|trait|self|Self|super|crate|where|async|await|move|ref|type|const|static|unsafe|extern|as|in|true|false|None|Some|Ok|Err|Box|Vec|String|Option|Result)\b/g,
+      };
+      // Use js keywords for jsx/tsx
+      const jsLangs = ['js', 'jsx', 'tsx', 'ts'];
+      let kwRegex = keywords[lang];
+      if (!kwRegex && jsLangs.includes(lang)) {
+        kwRegex = keywords['typescript'];
+      }
+
+      let result = code;
+      // Strings
+      result = result.replace(/(["'`])(?:(?!\1|\\).|\\.)*?\1/g, '<span class="hljs-string">$&</span>');
+      // Comments (single line)
+      result = result.replace(/(\/\/.*$|#.*$)/gm, '<span class="hljs-comment">$&</span>');
+      // Numbers
+      result = result.replace(/\b(\d+\.?\d*)\b/g, '<span class="hljs-number">$1</span>');
+      // Keywords
+      if (kwRegex) {
+        result = result.replace(kwRegex, '<span class="hljs-keyword">$&</span>');
+      }
+
+      return result;
     }
   </script>
 </body>

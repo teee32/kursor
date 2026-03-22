@@ -45,11 +45,32 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
           this._messages = [{ role: 'system', content: SYSTEM_PROMPT }];
           this._abortController?.abort();
           break;
+        case 'stop':
+          this._abortController?.abort();
+          break;
         case 'setModel':
           await vscode.workspace
             .getConfiguration('kursor')
             .update('model', msg.model, vscode.ConfigurationTarget.Global);
           break;
+        case 'insertCode':
+          this._insertCodeToEditor(msg.content);
+          break;
+      }
+    });
+  }
+
+  private _insertCodeToEditor(code: string) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      vscode.window.showWarningMessage('Kursor: No active editor to insert code into.');
+      return;
+    }
+    editor.edit((editBuilder) => {
+      if (editor.selection.isEmpty) {
+        editBuilder.insert(editor.selection.active, code);
+      } else {
+        editBuilder.replace(editor.selection, code);
       }
     });
   }
@@ -69,7 +90,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       if (selectedText) {
         contextInfo = `\n\n[Context: User has selected the following code from ${fileName} (${language})]\n\`\`\`${language}\n${selectedText}\n\`\`\``;
       } else {
-        // Send first 100 lines of current file as context
         const fullText = editor.document.getText();
         const preview = fullText.split('\n').slice(0, 100).join('\n');
         contextInfo = `\n\n[Context: User is viewing ${fileName} (${language})]\n\`\`\`${language}\n${preview}\n\`\`\``;
@@ -101,6 +121,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       this._messages.push({ role: 'assistant', content: fullResponse });
       this._view.webview.postMessage({ type: 'streamEnd' });
     } catch (error: any) {
+      if (error.message === 'Request aborted') {
+        this._view.webview.postMessage({ type: 'streamEnd' });
+        return;
+      }
       const errMsg = error.message || randomFrom(ERROR_MESSAGES);
       this._view.webview.postMessage({
         type: 'error',
@@ -110,7 +134,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   }
 
   private _getHtml(): string {
-    // Try compiled output location first, then source (for dev)
     let htmlPath = path.join(this._extensionUri.fsPath, 'out', 'chat', 'chat.html');
     if (!fs.existsSync(htmlPath)) {
       htmlPath = path.join(this._extensionUri.fsPath, 'src', 'chat', 'chat.html');
