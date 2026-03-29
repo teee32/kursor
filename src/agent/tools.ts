@@ -15,7 +15,7 @@ export const AGENT_TOOLS: Tool[] = [
           },
           query: {
             type: 'string',
-            description: 'Text or regex pattern to search within file contents',
+            description: 'Text query to search within file contents',
           },
           maxResults: {
             type: 'number',
@@ -69,7 +69,7 @@ export const AGENT_TOOLS: Tool[] = [
           },
           timeout: {
             type: 'number',
-            description: 'Timeout in milliseconds. Default 30000 (30s).',
+            description: 'Timeout in milliseconds. Defaults to the configured kursor.commandTimeout value.',
           },
         },
         required: ['command'],

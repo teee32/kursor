@@ -51,8 +51,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register Clear Chat command
   context.subscriptions.push(
-    vscode.commands.registerCommand('kursor.clearChat', () => {
-      vscode.commands.executeCommand('kursor.chatView.focus');
+    vscode.commands.registerCommand('kursor.clearChat', async () => {
+      chatProvider.clearChat();
+      await vscode.commands.executeCommand('kursor.chatView.focus');
     })
   );
 

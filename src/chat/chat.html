@@ -538,7 +538,7 @@
             <span class="mode-arrow">&#9662;</span>
           </div>
           <div class="model-label" id="modelSelector">
-            <span id="modelName">Kimi K2.5 Fast</span>
+            <span id="modelName">Moonshot 32K</span>
             <span class="model-arrow">&#9662;</span>
           </div>
         </div>
@@ -580,9 +580,9 @@
 
   <!-- Model dropdown -->
   <div class="dropdown-menu" id="modelDropdown">
-    <div class="dropdown-item active" data-model="kimi-k2.5">Kimi K2.5 Fast <span class="check">&#10003;</span></div>
+    <div class="dropdown-item" data-model="kimi-k2.5">Kimi K2.5 Fast</div>
     <div class="dropdown-item" data-model="moonshot-v1-128k">Moonshot 128K</div>
-    <div class="dropdown-item" data-model="moonshot-v1-32k">Moonshot 32K</div>
+    <div class="dropdown-item active" data-model="moonshot-v1-32k">Moonshot 32K <span class="check">&#10003;</span></div>
     <div class="dropdown-item" data-model="moonshot-v1-8k">Moonshot 8K</div>
   </div>
 
@@ -621,16 +621,25 @@
     const stopBtnContainer = document.getElementById('stopBtnContainer');
     const stopBtn = document.getElementById('stopBtn');
     const mentionPopup = document.getElementById('mentionPopup');
+    const initialState = __KURSOR_INITIAL_STATE__;
+    const modelLabels = {
+      'kimi-k2.5': 'Kimi K2.5 Fast',
+      'moonshot-v1-128k': 'Moonshot 128K',
+      'moonshot-v1-32k': 'Moonshot 32K',
+      'moonshot-v1-8k': 'Moonshot 8K',
+    };
 
     let isStreaming = false;
     let currentAssistantEl = null;
     let codeBlockCounter = 0;
     let currentMode = 'agent';
+    let currentModel = initialState.model || 'moonshot-v1-32k';
 
     function saveState() {
       vscode.setState({
         chatHtml: chatContainer.innerHTML,
         currentMode,
+        currentModel,
         modelName: modelName.textContent,
         userInput: userInput.value,
       });
@@ -643,14 +652,18 @@
       if (state.chatHtml) {
         chatContainer.innerHTML = state.chatHtml;
         chatContainer.querySelectorAll('.msg-body').forEach(bindCodeBlockActions);
+        chatContainer.querySelectorAll('.tool-call-block').forEach(bindToolCallBlock);
+        chatContainer.querySelectorAll('.tool-approval').forEach(bindApprovalButtons);
       }
       if (state.currentMode) {
-        currentMode = state.currentMode;
-        modeNameEl.textContent = currentMode === 'agent' ? 'Agent' : 'Ask';
-        modeIconEl.innerHTML = currentMode === 'agent' ? '&#8734;' : '&#9993;';
+        applyModeSelection(state.currentMode);
+      } else {
+        applyModeSelection(initialState.mode || 'agent');
       }
-      if (state.modelName) {
-        modelName.textContent = state.modelName;
+      if (state.currentModel) {
+        applyModelSelection(state.currentModel);
+      } else {
+        applyModelSelection(currentModel);
       }
       if (typeof state.userInput === 'string') {
         userInput.value = state.userInput;
@@ -769,11 +782,6 @@
     // ===== New chat =====
     newChatBtn.addEventListener('click', () => {
       vscode.postMessage({ type: 'clear' });
-      chatContainer.innerHTML = '<div class="empty-state" id="emptyState"></div>';
-      currentAssistantEl = null;
-      stopBtnContainer.classList.remove('visible');
-      userInput.focus();
-      saveState();
     });
 
     // ===== Stop generation =====
@@ -784,6 +792,23 @@
     });
 
     // ===== Model dropdown =====
+    function applyModelSelection(model) {
+      currentModel = modelLabels[model] ? model : 'moonshot-v1-32k';
+      modelName.textContent = modelLabels[currentModel];
+
+      modelDropdown.querySelectorAll('.dropdown-item').forEach((item) => {
+        const isActive = item.dataset.model === currentModel;
+        item.classList.toggle('active', isActive);
+        const check = item.querySelector('.check');
+
+        if (isActive && !check) {
+          item.insertAdjacentHTML('beforeend', ' <span class="check">&#10003;</span>');
+        } else if (!isActive && check) {
+          check.remove();
+        }
+      });
+    }
+
     modelSelector.addEventListener('click', (e) => {
       e.stopPropagation();
       const rect = modelSelector.getBoundingClientRect();
@@ -800,14 +825,7 @@
     modelDropdown.querySelectorAll('.dropdown-item').forEach(item => {
       item.addEventListener('click', () => {
         const model = item.dataset.model;
-        modelDropdown.querySelectorAll('.dropdown-item').forEach(i => {
-          i.classList.remove('active');
-          const c = i.querySelector('.check');
-          if (c) c.remove();
-        });
-        item.classList.add('active');
-        item.innerHTML += ' <span class="check">&#10003;</span>';
-        modelName.textContent = item.textContent.replace('\u2713', '').trim();
+        applyModelSelection(model);
         modelDropdown.classList.remove('show');
         vscode.postMessage({ type: 'setModel', model });
         saveState();
@@ -915,11 +933,15 @@
     const modeNameEl = modeSelector.querySelector('span:nth-child(2)');
     const modeIconEl = modeSelector.querySelector('.mode-icon');
 
-    modeSelector.addEventListener('click', (e) => {
-      e.stopPropagation();
-      currentMode = currentMode === 'agent' ? 'ask' : 'agent';
+    function applyModeSelection(mode) {
+      currentMode = mode === 'ask' ? 'ask' : 'agent';
       modeNameEl.textContent = currentMode === 'agent' ? 'Agent' : 'Ask';
       modeIconEl.innerHTML = currentMode === 'agent' ? '&#8734;' : '&#9993;';
+    }
+
+    modeSelector.addEventListener('click', (e) => {
+      e.stopPropagation();
+      applyModeSelection(currentMode === 'agent' ? 'ask' : 'agent');
       vscode.postMessage({ type: 'setMode', mode: currentMode });
       saveState();
     });
@@ -962,11 +984,7 @@
         '</div>' +
         '<div class="tool-call-body" id="tool_body_' + toolCallId + '">Executing...</div>';
 
-      block.querySelector('.tool-call-header').addEventListener('click', function() {
-        const body = document.getElementById('tool_body_' + toolCallId);
-        body.classList.toggle('collapsed');
-        this.classList.toggle('collapsed');
-      });
+      bindToolCallBlock(block);
 
       chatContainer.appendChild(block);
       scrollToBottom();
@@ -991,19 +1009,8 @@
         '<button class="tool-approval-btn accept" data-id="' + toolCallId + '">&#10003; Accept</button>' +
         '<button class="tool-approval-btn reject" data-id="' + toolCallId + '">&#10005; Reject</button>';
 
-      approvalDiv.querySelector('.accept').addEventListener('click', function() {
-        vscode.postMessage({ type: 'toolApproval', toolCallId: toolCallId, approved: true });
-        approvalDiv.remove();
-        block.querySelector('.tool-status').innerHTML = '&#9654; Running...';
-      });
-      approvalDiv.querySelector('.reject').addEventListener('click', function() {
-        vscode.postMessage({ type: 'toolApproval', toolCallId: toolCallId, approved: false });
-        approvalDiv.remove();
-        block.querySelector('.tool-status').innerHTML = '&#10005; Rejected';
-        block.querySelector('.tool-status').style.color = '#f44747';
-      });
-
       block.appendChild(approvalDiv);
+      bindApprovalButtons(approvalDiv);
       scrollToBottom();
       saveState();
     }
@@ -1042,6 +1049,9 @@
         case 'streamEnd':
           endStream();
           break;
+        case 'chatReset':
+          resetChatUi();
+          break;
         case 'error':
           removeThinking();
           addMessage('assistant', '&#10060; ' + escapeHtml(msg.content));
@@ -1063,6 +1073,8 @@
     // ===== Code block actions =====
     function bindCodeBlockActions(container) {
       container.querySelectorAll('.code-action-copy').forEach(btn => {
+        if (btn.dataset.bound === 'true') return;
+        btn.dataset.bound = 'true';
         btn.addEventListener('click', () => {
           const wrapper = btn.closest('.code-block-wrapper');
           const code = wrapper.querySelector('code').textContent;
@@ -1077,6 +1089,8 @@
         });
       });
       container.querySelectorAll('.code-action-insert').forEach(btn => {
+        if (btn.dataset.bound === 'true') return;
+        btn.dataset.bound = 'true';
         btn.addEventListener('click', () => {
           const wrapper = btn.closest('.code-block-wrapper');
           const code = wrapper.querySelector('code').textContent;
@@ -1085,7 +1099,64 @@
       });
     }
 
+    function bindToolCallBlock(block) {
+      const header = block.querySelector('.tool-call-header');
+      if (!header || header.dataset.bound === 'true') {
+        return;
+      }
+
+      header.dataset.bound = 'true';
+      header.addEventListener('click', function() {
+        const toolCallId = this.dataset.id;
+        const body = document.getElementById('tool_body_' + toolCallId);
+        if (!body) return;
+        body.classList.toggle('collapsed');
+        this.classList.toggle('collapsed');
+      });
+    }
+
+    function bindApprovalButtons(container) {
+      container.querySelectorAll('.tool-approval-btn').forEach((button) => {
+        if (button.dataset.bound === 'true') {
+          return;
+        }
+
+        button.dataset.bound = 'true';
+        button.addEventListener('click', () => {
+          const toolCallId = button.dataset.id;
+          const approved = button.classList.contains('accept');
+          const approval = button.closest('.tool-approval');
+          const block = button.closest('.tool-call-block');
+          const status = block && block.querySelector('.tool-status');
+
+          vscode.postMessage({ type: 'toolApproval', toolCallId, approved });
+          if (approval) approval.remove();
+
+          if (status) {
+            if (approved) {
+              status.innerHTML = '&#9654; Running...';
+              status.style.color = '';
+            } else {
+              status.innerHTML = '&#10005; Rejected';
+              status.style.color = '#f44747';
+            }
+          }
+
+          saveState();
+        });
+      });
+    }
+
     restoreState();
+
+    function resetChatUi() {
+      chatContainer.innerHTML = '<div class="empty-state" id="emptyState"></div>';
+      currentAssistantEl = null;
+      isStreaming = false;
+      stopBtnContainer.classList.remove('visible');
+      userInput.focus();
+      saveState();
+    }
 
     function scrollToBottom() {
       chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -1129,14 +1200,11 @@
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
       // Links
-      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$1" title="$2">$1</a>');
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" title="$2" target="_blank" rel="noopener noreferrer">$1</a>');
       // Blockquotes
       html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
-      // Unordered lists
-      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-      html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-      // Ordered lists
-      html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+      // Lists
+      html = renderLists(html);
       // Line breaks (but not inside code blocks)
       html = html.replace(/\n/g, '<br>');
       // Clean up extra <br> after block elements
@@ -1144,6 +1212,44 @@
       html = html.replace(/<br><(h[1-3]|blockquote|ul|ol)/g, '<$1');
 
       return html;
+    }
+
+    function renderLists(html) {
+      const lines = html.split('\n');
+      const output = [];
+      let listType = null;
+
+      for (const line of lines) {
+        const unordered = line.match(/^- (.+)$/);
+        const ordered = line.match(/^\d+\. (.+)$/);
+        const match = unordered || ordered;
+
+        if (match) {
+          const nextType = unordered ? 'ul' : 'ol';
+          if (listType !== nextType) {
+            if (listType) {
+              output.push('</' + listType + '>');
+            }
+            output.push('<' + nextType + '>');
+            listType = nextType;
+          }
+          output.push('<li>' + match[1] + '</li>');
+          continue;
+        }
+
+        if (listType) {
+          output.push('</' + listType + '>');
+          listType = null;
+        }
+
+        output.push(line);
+      }
+
+      if (listType) {
+        output.push('</' + listType + '>');
+      }
+
+      return output.join('\n');
     }
 
     // ===== Basic syntax highlighting =====

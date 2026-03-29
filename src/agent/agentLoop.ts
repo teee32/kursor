@@ -28,10 +28,14 @@ export class AgentLoop {
 
   async run(messages: ChatMessage[], signal?: AbortSignal): Promise<ChatMessage[]> {
     let iterations = 0;
+    let hitIterationLimit = true;
     const updatedMessages = [...messages];
 
     while (iterations < this.maxIterations) {
-      if (signal?.aborted) { break; }
+      if (signal?.aborted) {
+        hitIterationLimit = false;
+        break;
+      }
       iterations++;
 
       // Call Kimi API with tools
@@ -45,6 +49,7 @@ export class AgentLoop {
       // If no tool calls, this is the final response
       if (!response.toolCalls || response.toolCalls.length === 0) {
         updatedMessages.push(response.assistantMessage);
+        hitIterationLimit = false;
         break;
       }
 
@@ -68,8 +73,13 @@ export class AgentLoop {
         // Check if approval is needed
         if (DANGEROUS_TOOLS.has(name)) {
           const approved = await this.requestApprovalWithTimeout(
-            name, parsedArgs, toolCall.id, 60000
+            name, parsedArgs, toolCall.id, 60000, signal
           );
+
+          if (approved === 'aborted' || signal?.aborted) {
+            hitIterationLimit = false;
+            break;
+          }
 
           if (!approved) {
             const result: ToolResult = {
@@ -87,7 +97,12 @@ export class AgentLoop {
         }
 
         // Execute the tool
-        const result = await this.toolExecutor.execute(name, parsedArgs);
+        const result = await this.toolExecutor.execute(name, parsedArgs, signal);
+
+        if (signal?.aborted) {
+          hitIterationLimit = false;
+          break;
+        }
 
         // Truncate output for API (full output shown in UI)
         const truncatedOutput = result.success
@@ -106,7 +121,7 @@ export class AgentLoop {
       // Continue the loop — Kimi will process tool results
     }
 
-    if (iterations >= this.maxIterations) {
+    if (hitIterationLimit && iterations >= this.maxIterations) {
       this.callbacks.onError(new Error(
         `Agent reached maximum iteration limit (${this.maxIterations}). ` +
         'Unlike Cursor, we tell you when we hit the ceiling.'
@@ -121,10 +136,22 @@ export class AgentLoop {
     toolName: string,
     args: Record<string, any>,
     toolCallId: string,
-    timeoutMs: number
-  ): Promise<boolean> {
+    timeoutMs: number,
+    signal?: AbortSignal
+  ): Promise<boolean | 'aborted'> {
+    if (signal?.aborted) {
+      return 'aborted';
+    }
+
     return Promise.race([
       this.callbacks.onApprovalRequired(toolName, args, toolCallId),
+      new Promise<'aborted'>((resolve) => {
+        signal?.addEventListener(
+          'abort',
+          () => resolve('aborted'),
+          { once: true }
+        );
+      }),
       new Promise<boolean>((resolve) =>
         setTimeout(() => resolve(false), timeoutMs)
       ),

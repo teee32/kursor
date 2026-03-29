@@ -1,12 +1,7 @@
-src/
-node_modules/
-*.vsix
-.vscode-test/
+src/**
+tests/**
+scripts/**
 tsconfig.json
-docs/
-scripts/
-**/*.ts
-!out/**
 .gitignore
+*.vsix
 .DS_Store
-CHANGELOG.md

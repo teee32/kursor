@@ -14,6 +14,12 @@ import { ToolExecutor } from '../agent/toolExecutor';
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'kursor.chatView';
+  private static readonly MODEL_LABELS: Record<string, string> = {
+    'kimi-k2.5': 'Kimi K2.5 Fast',
+    'moonshot-v1-128k': 'Moonshot 128K',
+    'moonshot-v1-32k': 'Moonshot 32K',
+    'moonshot-v1-8k': 'Moonshot 8K',
+  };
   private _view?: vscode.WebviewView;
   private _messages: ChatMessage[] = [];
   private _client: KimiClient;
@@ -26,7 +32,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   constructor(private readonly _extensionUri: vscode.Uri) {
     this._client = new KimiClient();
-    this._messages.push({ role: 'system', content: AGENT_SYSTEM_PROMPT });
+    this._resetChat();
+  }
+
+  public clearChat() {
+    this._cancelActiveRequest();
+    this._resetChat();
+    this._view?.webview.postMessage({ type: 'chatReset' });
   }
 
   resolveWebviewView(
@@ -49,15 +61,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
           await this._handleChat(msg.content);
           break;
         case 'clear':
-          this._resetChat();
-          this._abortController?.abort();
+          this.clearChat();
           break;
         case 'stop':
-          this._abortController?.abort();
+          this._cancelActiveRequest();
           break;
         case 'setMode':
           this._mode = msg.mode;
-          this._resetChat();
+          this.clearChat();
           break;
         case 'setModel':
           await vscode.workspace
@@ -80,6 +91,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _resetChat() {
     const prompt = this._mode === 'agent' ? AGENT_SYSTEM_PROMPT : SYSTEM_PROMPT;
     this._messages = [{ role: 'system', content: prompt }];
+  }
+
+  private _cancelActiveRequest() {
+    this._abortController?.abort();
+    this._abortController = undefined;
+
+    if (this._pendingApproval) {
+      this._pendingApproval.resolve(false);
+      this._pendingApproval = undefined;
+    }
   }
 
   private _insertCodeToEditor(code: string) {
@@ -123,8 +144,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       content: userMessage + contextInfo,
     });
 
+    let abortController: AbortController | undefined;
     try {
-      this._abortController = new AbortController();
+      abortController = new AbortController();
+      this._abortController = abortController;
       this._view.webview.postMessage({ type: 'streamStart' });
 
       if (this._mode === 'agent') {
@@ -142,6 +165,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         type: 'error',
         content: errMsg,
       });
+    } finally {
+      this._pendingApproval = undefined;
+      if (this._abortController === abortController) {
+        this._abortController = undefined;
+      }
     }
   }
 
@@ -178,8 +206,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     const config = vscode.workspace.getConfiguration('kursor');
     const maxIterations = config.get<number>('agentMaxIterations', 20);
+    const commandTimeout = config.get<number>('commandTimeout', 30000);
 
-    const toolExecutor = new ToolExecutor(workspaceFolder.uri.fsPath);
+    const toolExecutor = new ToolExecutor(
+      workspaceFolder.uri.fsPath,
+      commandTimeout
+    );
     const agentLoop = new AgentLoop(
       this._client,
       toolExecutor,
@@ -240,6 +272,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     if (!fs.existsSync(htmlPath)) {
       htmlPath = path.join(this._extensionUri.fsPath, 'src', 'chat', 'chat.html');
     }
-    return fs.readFileSync(htmlPath, 'utf8');
+    const config = vscode.workspace.getConfiguration('kursor');
+    const model = config.get<string>('model', 'moonshot-v1-32k');
+    const initialState = {
+      mode: this._mode,
+      model,
+      modelLabel: ChatViewProvider.MODEL_LABELS[model] || model,
+    };
+
+    return fs
+      .readFileSync(htmlPath, 'utf8')
+      .replace('__KURSOR_INITIAL_STATE__', JSON.stringify(initialState));
   }
 }

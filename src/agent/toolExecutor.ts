@@ -1,13 +1,28 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
 import { ToolResult } from '../api/types';
+import { resolveWorkspacePath } from './workspacePath';
+import { runShellCommand } from './runShellCommand';
+
+const SEARCH_INCLUDE_GLOB = '**/*.{ts,js,tsx,jsx,py,go,java,rs,json,yaml,yml,md,css,html}';
+const SEARCH_EXCLUDE_GLOB = '**/{node_modules,.git,out}/**';
+const DEFAULT_MAX_RESULTS = 20;
+const MAX_SEARCH_RESULTS = 100;
+const SEARCH_FILE_MULTIPLIER = 10;
+const DEFAULT_COMMAND_TIMEOUT = 30000;
 
 export class ToolExecutor {
-  constructor(private workspaceRoot: string) {}
+  constructor(
+    private workspaceRoot: string,
+    private defaultCommandTimeout = DEFAULT_COMMAND_TIMEOUT
+  ) {}
 
-  async execute(toolName: string, args: Record<string, any>): Promise<ToolResult> {
+  async execute(
+    toolName: string,
+    args: Record<string, any>,
+    signal?: AbortSignal
+  ): Promise<ToolResult> {
     try {
       switch (toolName) {
         case 'searchWorkspace':
@@ -15,7 +30,7 @@ export class ToolExecutor {
         case 'readFile':
           return await this.readFile(args);
         case 'runCommand':
-          return await this.runCommand(args);
+          return await this.runCommand(args, signal);
         case 'editFile':
           return await this.editFile(args);
         default:
@@ -27,16 +42,12 @@ export class ToolExecutor {
   }
 
   private resolvePath(relativePath: string): string {
-    const resolved = path.resolve(this.workspaceRoot, relativePath);
-    // Security: prevent path traversal outside workspace
-    if (!resolved.startsWith(this.workspaceRoot)) {
-      throw new Error(`Path traversal detected: ${relativePath} resolves outside workspace`);
-    }
-    return resolved;
+    return resolveWorkspacePath(this.workspaceRoot, relativePath);
   }
 
   private async searchWorkspace(args: Record<string, any>): Promise<ToolResult> {
-    const { glob: globPattern, query, maxResults = 20 } = args;
+    const { glob: globPattern, query } = args;
+    const maxResults = this.normalizeMaxResults(args.maxResults);
     let output = '';
 
     // File search by glob pattern
@@ -59,40 +70,17 @@ export class ToolExecutor {
 
     // Content search by text query
     if (query) {
-      try {
-        const grepResult = await this.execCommand(
-          `grep -rn --include="*.ts" --include="*.js" --include="*.tsx" --include="*.jsx" --include="*.py" --include="*.go" --include="*.java" --include="*.rs" --include="*.json" --include="*.yaml" --include="*.yml" --include="*.md" --include="*.css" --include="*.html" -l "${query.replace(/"/g, '\\"')}" . 2>/dev/null | head -${maxResults}`,
-          this.workspaceRoot,
-          10000
-        );
-        if (grepResult.trim()) {
-          output += `\nFiles containing "${query}":\n`;
-          const files = grepResult.trim().split('\n').slice(0, maxResults);
-          for (const file of files) {
-            const rel = file.replace(/^\.\//, '');
-            output += `  ${rel}\n`;
-
-            // Get matching lines with context
-            try {
-              const lines = await this.execCommand(
-                `grep -n "${query.replace(/"/g, '\\"')}" "${file}" 2>/dev/null | head -5`,
-                this.workspaceRoot,
-                5000
-              );
-              if (lines.trim()) {
-                for (const line of lines.trim().split('\n')) {
-                  output += `    ${line}\n`;
-                }
-              }
-            } catch {
-              // skip files we can't read
-            }
+      const matches = await this.findTextMatches(String(query), maxResults);
+      if (matches.length === 0) {
+        output += `\nNo files contain "${query}"\n`;
+      } else {
+        output += `\nFiles containing "${query}":\n`;
+        for (const match of matches) {
+          output += `  ${match.file}\n`;
+          for (const preview of match.previews) {
+            output += `    ${preview}\n`;
           }
-        } else {
-          output += `\nNo files contain "${query}"\n`;
         }
-      } catch {
-        output += `\nContent search failed for "${query}"\n`;
       }
     }
 
@@ -140,14 +128,25 @@ export class ToolExecutor {
     return { success: true, output: content };
   }
 
-  private async runCommand(args: Record<string, any>): Promise<ToolResult> {
-    const { command, cwd, timeout = 30000 } = args;
+  private async runCommand(
+    args: Record<string, any>,
+    signal?: AbortSignal
+  ): Promise<ToolResult> {
+    const { command, cwd, timeout = this.defaultCommandTimeout } = args;
     const workDir = cwd ? this.resolvePath(cwd) : this.workspaceRoot;
 
     try {
-      const output = await this.execCommand(command, workDir, timeout);
+      const output = await runShellCommand(command, workDir, timeout, signal);
       return { success: true, output: this.truncateOutput(output) };
     } catch (err: any) {
+      if (signal?.aborted || err?.name === 'AbortError') {
+        return {
+          success: false,
+          output: 'Command aborted.',
+          error: 'Command aborted',
+        };
+      }
+
       const output = err.stdout ? `${err.stdout}\n${err.stderr || ''}` : err.message;
       return {
         success: false,
@@ -183,23 +182,67 @@ export class ToolExecutor {
     return { success: true, output: `${action}: ${filePath}${desc}` };
   }
 
-  private execCommand(command: string, cwd: string, timeout: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      exec(command, { cwd, timeout, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
-        if (error) {
-          (error as any).stdout = stdout;
-          (error as any).stderr = stderr;
-          reject(error);
-          return;
-        }
-        resolve(stdout + (stderr ? `\nSTDERR:\n${stderr}` : ''));
-      });
-    });
-  }
-
   private truncateOutput(output: string, maxLen = 10000): string {
     if (output.length <= maxLen) { return output; }
     const half = Math.floor(maxLen / 2);
     return output.slice(0, half) + `\n\n... (${output.length - maxLen} chars truncated) ...\n\n` + output.slice(-half);
+  }
+
+  private normalizeMaxResults(value: unknown): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return DEFAULT_MAX_RESULTS;
+    }
+
+    return Math.min(
+      MAX_SEARCH_RESULTS,
+      Math.max(1, Math.floor(value))
+    );
+  }
+
+  private async findTextMatches(query: string, maxResults: number): Promise<Array<{
+    file: string;
+    previews: string[];
+  }>> {
+    const matches = new Map<string, string[]>();
+    const files = await vscode.workspace.findFiles(
+      SEARCH_INCLUDE_GLOB,
+      SEARCH_EXCLUDE_GLOB,
+      Math.min(MAX_SEARCH_RESULTS * SEARCH_FILE_MULTIPLIER, maxResults * SEARCH_FILE_MULTIPLIER)
+    );
+    const normalizedQuery = query.toLowerCase();
+
+    for (const file of files) {
+      if (matches.size >= maxResults) {
+        break;
+      }
+
+      try {
+        const content = fs.readFileSync(file.fsPath, 'utf8');
+        const previews: string[] = [];
+        const lines = content.split(/\r?\n/);
+
+        for (let index = 0; index < lines.length; index += 1) {
+          if (!lines[index].toLowerCase().includes(normalizedQuery)) {
+            continue;
+          }
+
+          previews.push(`${index + 1}: ${lines[index].trim()}`);
+          if (previews.length >= 5) {
+            break;
+          }
+        }
+
+        if (previews.length > 0) {
+          matches.set(path.relative(this.workspaceRoot, file.fsPath), previews);
+        }
+      } catch {
+        // Skip files that cannot be decoded as UTF-8 text.
+      }
+    }
+
+    return Array.from(matches.entries()).map(([file, previews]) => ({
+      file,
+      previews,
+    }));
   }
 }
